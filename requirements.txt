@@ -1,3 +1,14 @@
-pip install --upgrade pip
-pip --version
-pip install scikit-learn
+# Core Dependencies
+streamlit==1.43.2
+scikit-learn
+pandas
+numpy
+matplotlib
+seaborn
+pickle5
+joblib
+
+
+# For Geolocation (if searching hospitals)
+geopy
+googlemaps
