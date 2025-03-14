@@ -1,11 +1,11 @@
 import streamlit as st
 import requests
 
-# Define API Key directly
+# Define API Key
 HUGGINGFACE_API_KEY = "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"
 
 # Hugging Face API Setup
-API_URL = "https://api-inference.huggingface.co/models/DeepSeek/DeepSeek-R1"
+API_URL = "https://api-inference.huggingface.co/models/deepseek-ai/deepseek-chat"
 headers = {"Authorization": f"Bearer {HUGGINGFACE_API_KEY}"}
 
 # Function to get chatbot response
