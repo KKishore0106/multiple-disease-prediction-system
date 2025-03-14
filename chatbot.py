@@ -1,8 +1,7 @@
 import streamlit as st
 import pickle
-import numpy as np
 
-# Load the models
+# Function to load model
 def load_model(filename):
     with open(filename, "rb") as file:
         return pickle.load(file)
@@ -18,43 +17,44 @@ st.sidebar.title("Choose a Disease")
 menu = ["Diabetes", "Heart Disease", "Parkinson’s"]
 choice = st.sidebar.radio("Select Disease", menu)
 
-st.write("👋 Hello! Enter your health details to get predictions.")
+# Get user input fields based on disease selection
+def get_user_input(choice):
+    if choice == "Diabetes":
+        age = st.number_input("Age", min_value=0, max_value=120, step=1)
+        glucose = st.number_input("Glucose Level", min_value=0, step=1)
+        blood_pressure = st.number_input("Blood Pressure", min_value=0, step=1)
+        bmi = st.number_input("BMI", min_value=0.0, step=0.1)
+        return [[age, glucose, blood_pressure, bmi]], diabetes_model  # Features for diabetes model
 
-# User Input Form
-def get_user_input(fields):
-    user_data = []
-    for field in fields:
-        value = st.number_input(f"Enter {field}", min_value=0.0, format="%.2f")
-        user_data.append(value)
-    return np.array(user_data).reshape(1, -1)
+    elif choice == "Heart Disease":
+        age = st.number_input("Age", min_value=0, max_value=120, step=1)
+        cholesterol = st.number_input("Cholesterol Level", min_value=0, step=1)
+        blood_pressure = st.number_input("Blood Pressure", min_value=0, step=1)
+        thalach = st.number_input("Max Heart Rate", min_value=0, step=1)
+        return [[age, cholesterol, blood_pressure, thalach]], heart_model  # Features for heart model
 
-if choice == "Diabetes":
-    st.subheader("Diabetes Prediction")
-    features = ["Pregnancies", "Glucose", "BloodPressure", "SkinThickness", "Insulin", "BMI", "DiabetesPedigreeFunction", "Age"]
-    user_input = get_user_input(features)
+    elif choice == "Parkinson’s":
+        fo = st.number_input("MDVP:Fo(Hz)", min_value=0.0, step=0.1)
+        fhi = st.number_input("MDVP:Fhi(Hz)", min_value=0.0, step=0.1)
+        flo = st.number_input("MDVP:Flo(Hz)", min_value=0.0, step=0.1)
+        jitter = st.number_input("MDVP:Jitter(%)", min_value=0.0, step=0.01)
+        return [[fo, fhi, flo, jitter]], parkinsons_model  # Features for Parkinson's model
+
+    return None, None
+
+# Predict function
+if choice:
+    st.subheader(f"{choice} Prediction")
+    user_input, model = get_user_input(choice)
+
     if st.button("Predict"):
-        prediction = diabetes_model.predict(user_input)
-        result = "Diabetic" if prediction[0] == 1 else "Not Diabetic"
-        st.write(f"🩺 **Prediction:** {result}")
+        if model:
+            prediction = model.predict(user_input)[0]
+            if prediction == 1:
+                st.error(f"⚠️ High risk of {choice}. Please consult a doctor.")
+            else:
+                st.success(f"✅ No major signs of {choice}. Stay healthy!")
+        else:
+            st.warning("Invalid input. Please enter valid health details.")
 
-elif choice == "Heart Disease":
-    st.subheader("Heart Disease Prediction")
-    features = ["age", "sex", "cp", "trestbps", "chol", "fbs", "restecg", "thalach", "exang", "oldpeak", "slope", "ca", "thal"]
-    user_input = get_user_input(features)
-    if st.button("Predict"):
-        prediction = heart_model.predict(user_input)
-        result = "Heart Disease Detected" if prediction[0] == 1 else "No Heart Disease"
-        st.write(f"💖 **Prediction:** {result}")
-
-elif choice == "Parkinson’s":
-    st.subheader("Parkinson’s Prediction")
-    features = ["MDVP:Fo(Hz)", "MDVP:Fhi(Hz)", "MDVP:Flo(Hz)", "MDVP:Jitter(%)", "MDVP:Jitter(Abs)", "MDVP:RAP", 
-                "MDVP:PPQ", "Jitter:DDP", "MDVP:Shimmer", "MDVP:Shimmer(dB)", "Shimmer:APQ3", "Shimmer:APQ5", 
-                "MDVP:APQ", "Shimmer:DDA", "NHR", "HNR", "RPDE", "DFA", "spread1", "spread2", "D2", "PPE"]
-    user_input = get_user_input(features)
-    if st.button("Predict"):
-        prediction = parkinsons_model.predict(user_input)
-        result = "Parkinson’s Detected" if prediction[0] == 1 else "No Parkinson’s"
-        st.write(f"🧠 **Prediction:** {result}")
-
-st.write("🚀 Made by Kishore")
+st.write("Made by Kishore 🚀")
