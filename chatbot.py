@@ -1,15 +1,14 @@
 import streamlit as st
-import pickle
+import joblib
 import numpy as np
 
 # Load saved models
 def load_model(model_path):
-    with open(model_path, "rb") as file:
-        return pickle.load(file)
+    return joblib.load(model_path)
 
 # Load models
-diabetes_model = joblib.load("diabetes.pkl")
-heart_model = joblib.load("heart.pkl")
+diabetes_model = load_model("diabetes.pkl")
+heart_model = load_model("heart.pkl")
 
 # Streamlit UI
 st.title("🤖 Medical Chatbot for Disease Prediction")
@@ -68,4 +67,3 @@ if choice == "Heart Disease":
         st.write(f"💖 **Heart Disease Prediction:** {result}")
 
 st.write("Made by Kishore 🚀")
-
