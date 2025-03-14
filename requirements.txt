@@ -1,14 +1,9 @@
-# Core Dependencies
-streamlit==1.43.2
+streamlit
 scikit-learn
 pandas
 numpy
 matplotlib
 seaborn
-pickle5
 joblib
-
-
-# For Geolocation (if searching hospitals)
-geopy
 googlemaps
+rich
