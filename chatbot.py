@@ -8,8 +8,8 @@ def load_model(model_path):
         return pickle.load(file)
 
 # Load models
-diabetes_model = load_model("diabetes_model.pkl")
-heart_model = load_model("heart_disease_model.pkl")
+diabetes_model = load_model("diabetes.pkl")
+heart_model = load_model("heart.pkl")
 
 # Streamlit UI
 st.title("🤖 Medical Chatbot for Disease Prediction")
