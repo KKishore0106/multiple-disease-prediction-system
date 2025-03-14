@@ -1,2 +1,3 @@
+pip install --upgrade pip setuptools
 pip install scikit-learn
 pip install --upgrade pip
