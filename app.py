@@ -570,4 +570,4 @@ with st.sidebar:
     """)
     
     st.markdown("### Privacy Notice")
-    st.markdown("Your data is processed locally and not 
+    st.markdown("Your data is processed locally and not  stored or shared.")
