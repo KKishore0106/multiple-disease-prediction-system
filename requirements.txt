@@ -1,2 +1,2 @@
 streamlit-option-menu==0.3.2
-scikit-learn==0.21.3
+scikit-learn==1.6.1
