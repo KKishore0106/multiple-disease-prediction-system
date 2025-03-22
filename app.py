@@ -6,22 +6,28 @@ import re
 
 # **1️⃣ Set up page configuration**
 st.set_page_config(page_title="Medical AI Chatbot", layout="wide")
+
 st.markdown("""
 <style>
     /* Full page background */
     .stApp {
-        background: linear-gradient(to bottom, #dde6f2, #f7f8fc);
+        background: white;
         font-family: 'Inter', sans-serif;
     }
 
-    /* Sidebar */
+    /* Sidebar (Black with Fade) */
     .css-1d391kg {
-        background: #ffffff;
-        border-right: 1px solid #ddd;
+        background: linear-gradient(to bottom, #000, #222);
+        color: white;
+        border-right: 2px solid #444;
         padding: 20px;
     }
 
-    /* Sidebar buttons */
+    /* Sidebar text & buttons */
+    .css-1d391kg h1, .css-1d391kg h2, .css-1d391kg h3, .css-1d391kg h4, .css-1d391kg h5, .css-1d391kg h6, .css-1d391kg p {
+        color: white !important;
+    }
+
     .stButton>button {
         background-color: #3b82f6 !important;
         color: white !important;
@@ -35,6 +41,13 @@ st.markdown("""
     .stButton>button:hover {
         background-color: #2563eb !important;
         transform: scale(1.03);
+    }
+
+    /* Chat area (White background) */
+    .block-container {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
     }
 
     /* Chat container */
@@ -59,18 +72,18 @@ st.markdown("""
 
     /* User message */
     .chat-message.user {
-        background-color: #dbeafe;
-        border-left: 4px solid #3b82f6;
+        background-color: #3b82f6;
+        color: white;
+        border-left: 4px solid #1e3a8a;
         align-self: flex-end;
-        color: #000;
     }
 
     /* AI response */
     .chat-message.assistant {
         background-color: #f3f4f6;
+        color: black;
         border-left: 4px solid #22c55e;
         align-self: flex-start;
-        color: #000;
     }
 
     /* Chat input box */
