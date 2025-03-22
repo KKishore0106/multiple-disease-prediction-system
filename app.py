@@ -116,7 +116,7 @@ st.markdown("""
         bottom: 5px;
         transition: all 0.2s ease-in-out;
         display: flex;
-        align-items: center;
+        align-items: right;
         justify-content: center;
         font-size: 18px;
     }
