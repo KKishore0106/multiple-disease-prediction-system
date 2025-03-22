@@ -665,8 +665,7 @@ import streamlit as st
 # Sidebar Content
 with st.sidebar:
     # Medical-Themed Image
-    st.image("https://www.shutterstock.com/image-vector/ai-medical-healthcare-logo-vector-600nw-2232607603.jpg", use_column_width=True)
-
+    st.image("https://www.shutterstock.com/image-vector/ai-medical-healthcare-logo-vector-600nw-2232607603.jpg", use_container_width=True)
     # About AI Medical Assistant
     st.header("🤖 About AI Medical Assistant")
     st.markdown("""
