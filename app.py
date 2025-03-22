@@ -6,48 +6,82 @@ import re
 
 # **1️⃣ Set up page configuration**
 st.set_page_config(page_title="Medical AI Chatbot", layout="wide")
-# Add custom CSS for a more interactive background
 st.markdown("""
 <style>
+    /* Apply a smooth gradient background */
     .stApp {
-        background: linear-gradient(to bottom right, #f5f7fa, #e4ecf7);
+        background: linear-gradient(135deg, #dfe9f3, #ffffff);
+        font-family: 'Arial', sans-serif;
     }
-    
-    .chat-message {   
-        padding: 1.5rem;
-        border-radius: 0.8rem;
-        margin-bottom: 1rem;
+
+    /* Styling chat messages */
+    .chat-container {
         display: flex;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        transition: transform 0.2s;
-        writing-mode: vertical-rl; /* Makes text vertical from right to left */
-        text-orientation: upright; /* Ensures letters are upright */
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 10px;
     }
-    
-    .chat-message:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+
+    .chat-message {
+        max-width: 70%;
+        padding: 15px;
+        border-radius: 12px;
+        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+        transition: transform 0.2s ease-in-out;
+        font-size: 16px;
+        line-height: 1.5;
+        text-align: left;
+        word-wrap: break-word;
+        animation: fadeIn 0.5s ease-in-out;
     }
-    
+
+    /* User message style */
     .chat-message.user {
         background-color: #e9f5ff;
         border-left: 5px solid #3b82f6;
+        align-self: flex-end;
     }
-    
+
+    /* Assistant message style */
     .chat-message.assistant {
         background-color: #f0f9ff;
         border-left: 5px solid #22c55e;
+        align-self: flex-start;
     }
-    
+
+    /* Hover effect */
+    .chat-message:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    }
+
+    /* Button hover effect */
     .stButton>button {
-        transition: all 0.3s;
+        transition: all 0.3s ease-in-out;
+        border-radius: 8px;
     }
-    
+
     .stButton>button:hover {
         transform: scale(1.05);
+        background-color: #3b82f6 !important;
+        color: white !important;
+    }
+
+    /* Fade-in animation */
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
 </style>
 """, unsafe_allow_html=True)
+
 
 # **2️⃣ Load ML Models (Optimized with Cache)**
 @st.cache_resource
