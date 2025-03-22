@@ -406,88 +406,73 @@ elif st.session_state.conversation_state == "collecting_inputs":
             response = f"⚠️ Please enter a valid number for {st.session_state.modifying_field}."
     
     # Normal input collection flow
-    else:
-        try:
-            float_value = float(prompt)  # Validate the input is a number
+else:
+    try:
+        float_value = float(prompt)  # Validate the input is a number
+        
+        current_field = st.session_state.field_keys[st.session_state.current_field_index]
+        field_info = fields[current_field]
+        
+        # Check if value is within expected range
+        range_min, range_max = map(float, field_info['range'].split('-'))
+        if float_value < range_min or float_value > range_max:
+            response = f"⚠️ The value you entered ({float_value}) is outside the typical range ({field_info['range']}). Are you sure this is correct? (yes/no)"
+        else:
+            # Store the value and move to next field
+            st.session_state.input_values[current_field] = float_value
+            st.session_state.current_field_index += 1
             
-            current_field = st.session_state.field_keys[st.session_state.current_field_index]
-            field_info = fields[current_field]
-            
-            # Check if value is within expected range
-            range_min, range_max = map(float, field_info['range'].split('-'))
-            if float_value < range_min or float_value > range_max:
-                response = f"⚠️ The value you entered ({float_value}) is outside the typical range ({field_info['range']}). Are you sure this is correct? (yes/no)"
+            # Check if we have all fields or need more
+            if st.session_state.current_field_index < len(st.session_state.field_keys):
+                next_field = st.session_state.field_keys[st.session_state.current_field_index]
+                field_info = fields[next_field]
+                response = f"Great! Now, please enter your {next_field} ({field_info['description']}). "
+                response += f"Typical range: {field_info['range']} {field_info['unit']}"
             else:
-                # Store the value and move to next field
-                st.session_state.input_values[current_field] = float_value
+                # We have all values, show summary and confirm
+                response = "Thanks for providing all the information. Here's a summary of what you entered:\n\n"
+                for field, value in st.session_state.input_values.items():
+                    response += f"- {field}: {value}\n"
+                response += "\nWould you like to get your prediction now? (yes/no)"
+    except ValueError:
+        if any(x in prompt.lower() for x in ["yes", "yeah", "sure", "okay", "ok", "yep", "y"]):
+            # If they confirm an out-of-range value
+            current_field = st.session_state.field_keys[st.session_state.current_field_index]
+            try:
+                last_value = float(st.session_state.messages[-3]["content"])
+                st.session_state.input_values[current_field] = last_value
                 st.session_state.current_field_index += 1
                 
-                # Check if we have all fields or need more
                 if st.session_state.current_field_index < len(st.session_state.field_keys):
                     next_field = st.session_state.field_keys[st.session_state.current_field_index]
                     field_info = fields[next_field]
-                    response = f"Great! Now, please enter your {next_field} ({field_info['description']}). "
+                    response = f"Noted. Now, please enter your {next_field} ({field_info['description']}). "
                     response += f"Typical range: {field_info['range']} {field_info['unit']}"
                 else:
-                    # We have all values, show summary and confirm
                     response = "Thanks for providing all the information. Here's a summary of what you entered:\n\n"
                     for field, value in st.session_state.input_values.items():
                         response += f"- {field}: {value}\n"
                     response += "\nWould you like to get your prediction now? (yes/no)"
-        except ValueError:
-            if any(x in prompt.lower() for x in ["yes", "yeah", "sure", "okay", "ok", "yep", "y"]):
-                # If they confirm an out-of-range value
-                current_field = st.session_state.field_keys[st.session_state.current_field_index]
-                try:
-                    last_value = float(st.session_state.messages[-3]["content"])
-                    st.session_state.input_values[current_field] = last_value
-                    st.session_state.current_field_index += 1
-                    
-                    if st.session_state.current_field_index < len(st.session_state.field_keys):
-                        next_field = st.session_state.field_keys[st.session_state.current_field_index]
-                        field_info = fields[next_field]
-                        response = f"Noted. Now, please enter your {next_field} ({field_info['description']}). "
-                        response += f"Typical range: {field_info['range']} {field_info['unit']}"
-                    else:
-                        response = "Thanks for providing all the information. Here's a summary of what you entered:\n\n"
-                        for field, value in st.session_state.input_values.items():
-                            response += f"- {field}: {value}\n"
-                        response += "\nWould you like to get your prediction now? (yes/no)"
-                except:
-                    response = f"Let's try again. Please enter a numeric value for {current_field}."
-            elif any(x in prompt.lower() for x in ["no", "nope", "n"]):
-                # If they want to change an out-of-range value
-                current_field = st.session_state.field_keys[st.session_state.current_field_index]
-                field_info = fields[current_field]
-                response = f"Let's try again. Please enter a new value for {current_field} ({field_info['description']}). Typical range: {field_info['range']} {field_info['unit']}"
-            else:
-                response = f"I didn't understand that. Please enter a numeric value for {current_field}."
-        
-        # Process final prediction if user confirms
-        elif st.session_state.current_field_index >= len(st.session_state.field_keys) and any(x in prompt.lower() for x in ["yes", "yeah", "sure", "okay", "ok", "yep", "y"]):
-            # Make sure we have all required fields
-            if len(st.session_state.input_values) == len(disease_fields[disease]):
-                prediction_result = get_prediction(disease, st.session_state.input_values)
-                
-                # Get advice based on prediction
-                if "Positive" in prediction_result:
-                    medical_advice = chat_with_mistral(f"Provide concise, helpful general information and lifestyle advice for someone who has tested positive for {disease}. Do not claim to diagnose the person and remind them to consult a healthcare professional.")
-                    response = f"{prediction_result}\n\n{medical_advice}\n\nPlease note: This is not a medical diagnosis. Always consult with a healthcare professional for proper evaluation and treatment."
-                else:
-                    medical_advice = chat_with_mistral(f"Provide concise, helpful general information and lifestyle advice for someone who wants to maintain good health and prevent {disease}. Include preventive measures.")
-                    response = f"{prediction_result}\n\nThat's good news! Here's some advice on maintaining your health:\n\n{medical_advice}\n\nPlease note: This is not a medical diagnosis. Always consult with a healthcare professional for regular check-ups."
-                
-                # Reset conversation state
-                st.session_state.conversation_state = "general"
-                st.session_state.disease_name = None
-                st.session_state.input_values = {}
-                st.session_state.current_field_index = 0
-                st.session_state.field_keys = []
-            
-        # If user says no to prediction
-        elif "Would you like to get your prediction now?" in st.session_state.messages[-1]["content"] and any(x in prompt.lower() for x in ["no", "nope", "n"]):
-            response = "No problem. Is there anything specific you'd like to modify, or would you like to start over? You can also ask me about another health topic."
+            except:
+                response = f"Let's try again. Please enter a numeric value for {current_field}."
+        elif any(x in prompt.lower() for x in ["no", "nope", "n"]):
+            # If they want to change an out-of-range value
+            current_field = st.session_state.field_keys[st.session_state.current_field_index]
+            field_info = fields[current_field]
+            response = f"Let's try again. Please enter a new value for {current_field} ({field_info['description']}). Typical range: {field_info['range']} {field_info['unit']}"
+        else:
+            response = f"I didn't understand that. Please enter a numeric value for {current_field}."
     
+    # Check for final prediction confirmation - this was previously misplaced
+    if st.session_state.current_field_index >= len(st.session_state.field_keys) and any(x in prompt.lower() for x in ["yes", "yeah", "sure", "okay", "ok", "yep", "y"]):
+        # Make sure we have all required fields
+        if len(st.session_state.input_values) == len(disease_fields[disease]):
+            prediction_result = get_prediction(disease, st.session_state.input_values)
+            
+            # Get advice based on prediction
+            if "Positive" in prediction_result:
+                medical_advice = chat_with_mistral(f"Provide concise, helpful general information and lifestyle advice for someone who has tested positive for {disease}. Do not claim to diagnose the person and remind them to consult a healthcare professional.")
+                response = f"{prediction_result}\n\n{medical_advice}\n\nPlease note: This is not a medical diagnosis. Always consult with a healthcare professional for proper evaluation and treatment."
     # Add assistant message to chat history
     st.session_state.messages.append({"role": "assistant", "content": response})
     
