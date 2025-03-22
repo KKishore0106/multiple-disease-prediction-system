@@ -6,6 +6,46 @@ import re
 
 # **1️⃣ Set up page configuration**
 st.set_page_config(page_title="Medical AI Chatbot", layout="wide")
+# Add custom CSS for a more interactive background
+st.markdown("""
+<style>
+    .stApp {
+        background: linear-gradient(to bottom right, #f5f7fa, #e4ecf7);
+    }
+    
+    .chat-message {
+        padding: 1.5rem;
+        border-radius: 0.8rem;
+        margin-bottom: 1rem;
+        display: flex;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        transition: transform 0.2s;
+    }
+    
+    .chat-message:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    
+    .chat-message.user {
+        background-color: #e9f5ff;
+        border-left: 5px solid #3b82f6;
+    }
+    
+    .chat-message.assistant {
+        background-color: #f0f9ff;
+        border-left: 5px solid #22c55e;
+    }
+    
+    .stButton>button {
+        transition: all 0.3s;
+    }
+    
+    .stButton>button:hover {
+        transform: scale(1.05);
+    }
+</style>
+""", unsafe_allow_html=True)
 
 # **2️⃣ Load ML Models (Optimized with Cache)**
 @st.cache_resource
@@ -29,17 +69,30 @@ HF_API_TOKEN = "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"
 MODEL_NAME = "mistralai/Mistral-7B-Instruct-v0.3"
 headers = {"Authorization": f"Bearer {HF_API_TOKEN}"}
 
+# Modify the chat_with_mistral function to handle different types of responses
 @st.cache_data
-def chat_with_mistral(prompt):
-    """Calls Hugging Face API and caches responses."""
+def chat_with_mistral(prompt, response_type="medical"):
+    """Calls Hugging Face API with contextual prompting based on response_type"""
     try:
+        # Add specific context based on the type of response needed
+        if response_type == "medical":
+            system_prompt = "You are a helpful medical AI assistant. Provide accurate health information without making diagnoses. Be concise but thorough."
+        elif response_type == "casual":
+            system_prompt = "You are a friendly conversational AI. Keep responses short, engaging, and natural. Ask thoughtful follow-up questions."
+        elif response_type == "educational":
+            system_prompt = "You are an educational AI that explains medical concepts in simple terms. Use analogies when helpful."
+        else:
+            system_prompt = "You are a helpful AI assistant."
+        
         # Create a proper instruction prompt for Mistral
-        formatted_prompt = f"""<s>[INST] {prompt} [/INST]</s>"""
+        formatted_prompt = f"""<s>[INST] {system_prompt}
+
+User message: {prompt} [/INST]</s>"""
         
         response = requests.post(
             f"https://api-inference.huggingface.co/models/{MODEL_NAME}",
             headers=headers,
-            json={"inputs": formatted_prompt}
+            json={"inputs": formatted_prompt, "parameters": {"max_new_tokens": 250}}
         )
         data = response.json()
         
@@ -54,7 +107,6 @@ def chat_with_mistral(prompt):
             return "⚠️ AI response error."
     except Exception as e:
         return f"⚠️ AI Error: {str(e)}"
-
 # **4️⃣ Disease Fields with Descriptions and Normal Ranges**
 disease_fields = {
     "Diabetes": {
@@ -331,8 +383,12 @@ def handle_general_state(prompt):
         return "Hello! 👋 How are you feeling today? I'm your AI medical assistant. I can help answer health questions, check for diabetes, heart disease, Parkinson's, liver disease, kidney disease, or breast cancer, or discuss symptoms you might be experiencing."
     
     # For general health questions
+else:
+    # Detect if it's a very short casual message
+    if len(prompt.split()) < 3:
+        return chat_with_mistral(prompt, response_type="casual")
     else:
-        return chat_with_mistral(f"The user said: '{prompt}'. Respond as a medical AI assistant but avoid making specific diagnoses. Instead, focus on general health information and suggesting next steps. Always maintain a friendly and helpful tone.")
+        return chat_with_mistral(prompt, response_type="medical")
 
 def handle_suggesting_disease_state(prompt):
     """Handle user input when suggesting a disease to check"""
@@ -534,21 +590,24 @@ if "modifying_field" not in st.session_state:
 st.title("Medical AI Assistant")
 st.write("Chat with our AI to check for diseases or get health advice")
 
+# Initialize chat history
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+
 # Create a container for chat history
 chat_container = st.container()
 
 # Display chat messages from history on app rerun
 with chat_container:
     for message in st.session_state.messages:
-        with st.chat_message(message["role"]):
-            st.markdown(message["content"])
+        role_class = "user" if message["role"] == "user" else "assistant"
+        st.markdown(f'<div class="chat-message {role_class}">{message["content"]}</div>', unsafe_allow_html=True)
 
 # Accept user input
 if prompt := st.chat_input("Ask me about your health or symptoms..."):
     # Display user message in chat message container
     with chat_container:
-        with st.chat_message("user"):
-            st.markdown(prompt)
+        st.markdown(f'<div class="chat-message user">{prompt}</div>', unsafe_allow_html=True)
         
         # Add user message to chat history
         st.session_state.messages.append({"role": "user", "content": prompt})
@@ -557,8 +616,7 @@ if prompt := st.chat_input("Ask me about your health or symptoms..."):
         response = process_user_input(prompt)
         
         # Display assistant response in chat message container
-        with st.chat_message("assistant"):
-            st.markdown(response)
+        st.markdown(f'<div class="chat-message assistant">{response}</div>', unsafe_allow_html=True)
         
         # Add assistant response to chat history
         st.session_state.messages.append({"role": "assistant", "content": response})
@@ -568,6 +626,17 @@ with st.sidebar:
     st.header("Available Disease Tests")
     
     # Create expandable sections for each disease
+    disease_fields = {
+        "Heart Disease": {"Blood Pressure": {"description": "Systolic/Diastolic pressure in mmHg"}},
+        "Diabetes": {"Fasting Blood Sugar": {"description": "Glucose level after fasting (mg/dl)"}},
+        "Parkinson’s": {"Tremor Severity": {"description": "Scale from 0-10"}},
+    }
+    disease_symptoms = {
+        "Heart Disease": ["Chest pain", "Shortness of breath", "Fatigue", "Dizziness", "Nausea"],
+        "Diabetes": ["Increased thirst", "Frequent urination", "Fatigue", "Blurred vision", "Slow-healing wounds"],
+        "Parkinson’s": ["Tremors", "Slow movement", "Muscle stiffness", "Impaired balance", "Speech changes"],
+    }
+    
     for disease, fields in disease_fields.items():
         with st.expander(f"{disease} Test"):
             st.write(f"**Required measurements:**")
@@ -581,8 +650,10 @@ with st.sidebar:
     
     # Disclaimer
     st.markdown("---")
-    st.caption("""
-    **Disclaimer:** This AI assistant provides information for educational purposes only. 
-    It is not a substitute for professional medical advice, diagnosis, or treatment. 
-    Always seek the advice of your physician or other qualified health provider.
-    """)
+    st.caption(
+        """
+        **Disclaimer:** This AI assistant provides information for educational purposes only. 
+        It is not a substitute for professional medical advice, diagnosis, or treatment. 
+        Always seek the advice of your physician or other qualified health provider.
+        """
+    )
