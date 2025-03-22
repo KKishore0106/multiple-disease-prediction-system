@@ -21,17 +21,12 @@ st.markdown("""
         padding: 20px;
     }
 
-    /* Sidebar text */
-    .css-1d391kg h1, .css-1d391kg h2, .css-1d391kg h3, .css-1d391kg p {
-        color: white !important;
-    }
-
     /* Centered Title */
     .main-title {
         text-align: center;
-        font-size: 30px;
+        font-size: 28px;
         font-weight: bold;
-        margin-top: 5px;
+        margin-top: 10px;
         margin-bottom: 5px;
         color: #333;
     }
@@ -39,85 +34,27 @@ st.markdown("""
     /* Subtitle (Health Advice Text) */
     .subtitle {
         text-align: center;
-        font-size: 16px;
+        font-size: 15px;
         color: #555;
-        margin-bottom: 15px;
+        margin-bottom: 10px;
     }
 
-    /* Chat area with padding */
+    /* Centralized Content */
     .block-container {
         background: white;
         border-radius: 12px;
-        padding: 20px 40px; /* Adjusted padding */
+        padding: 10px 30px; /* Reduced padding */
+        max-width: 700px;
+        margin: auto;
     }
 
-    /* Chat container */
-    .chat-container {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 10px;
-        padding: 10px;
-    }
-
-    /* Chat bubbles */
-    .chat-message {
-        max-width: 75%;
-        padding: 14px;
-        border-radius: 12px;
-        font-size: 16px;
-        text-align: left;
-        word-wrap: break-word;
-        margin: 6px 0;
-        box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.05);
-    }
-
-    /* User message (Light Blue) */
-    .chat-message.user {
-        background-color: #dbeafe;
-        color: #1e3a8a;
-        border-left: 5px solid #3b82f6;
-        align-self: flex-end;
-        border-radius: 16px;
-        padding: 14px;
-    }
-
-    /* AI response (Light Gray with Green Border) */
-    .chat-message.assistant {
-        background-color: #f3f4f6;
-        color: black;
-        border-left: 5px solid #22c55e;
-        align-self: flex-start;
-        border-radius: 16px;
-        padding: 14px;
-    }
-
-    /* Input Box */
+    /* Chat Input */
     .stTextInput>div>div>input {
         background-color: #fff;
         border: 1px solid #ccc;
         border-radius: 8px;
-        padding: 12px;
+        padding: 10px;
         width: 100%;
-        box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.05);
-    }
-
-    /* Floating send button */
-    .stButton>button.send-button {
-        background-color: #3b82f6 !important;
-        color: white !important;
-        border-radius: 50%;
-        width: 45px;
-        height: 45px;
-        position: absolute;
-        right: 15px;
-        bottom: 15px;
-        transition: all 0.2s ease-in-out;
-    }
-
-    .stButton>button.send-button:hover {
-        background-color: #2563eb !important;
-        transform: scale(1.1);
     }
 
 </style>
@@ -128,6 +65,7 @@ st.markdown('<h1 class="main-title">Medical AI Assistant</h1>', unsafe_allow_htm
 
 # Subtitle for health advice
 st.markdown('<p class="subtitle">Chat with our AI to check for diseases or get health advice</p>', unsafe_allow_html=True)
+
 
 # **2️⃣ Load ML Models (Optimized with Cache)**
 @st.cache_resource
