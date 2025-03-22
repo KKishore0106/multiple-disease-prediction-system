@@ -8,27 +8,36 @@ import re
 st.set_page_config(page_title="Medical AI Chatbot", layout="wide")
 st.markdown("""
 <style>
-    /* Full-page clean background (light grayish tone like ChatGPT) */
+    /* Full page background */
     .stApp {
-        background: #f0f2f6;
-        font-family: 'Arial', sans-serif;
-        color: #333333;
+        background: linear-gradient(to bottom, #dde6f2, #f7f8fc);
+        font-family: 'Inter', sans-serif;
     }
 
-    /* Sidebar Styling */
+    /* Sidebar */
     .css-1d391kg {
-        background: #ffffff !important;
-        border-right: 1px solid #ddd !important;
+        background: #ffffff;
+        border-right: 1px solid #ddd;
         padding: 20px;
-        color: #222 !important;
     }
 
-    /* Sidebar headers & text */
-    .css-1d391kg h2, .css-1d391kg h3, .css-1d391kg h4, .css-1d391kg p {
-        color: #222 !important;
+    /* Sidebar buttons */
+    .stButton>button {
+        background-color: #3b82f6 !important;
+        color: white !important;
+        border-radius: 12px;
+        width: 100%;
+        padding: 12px;
+        font-size: 16px;
+        transition: all 0.2s ease-in-out;
     }
 
-    /* Chat container (simple spacing) */
+    .stButton>button:hover {
+        background-color: #2563eb !important;
+        transform: scale(1.03);
+    }
+
+    /* Chat container */
     .chat-container {
         display: flex;
         flex-direction: column;
@@ -37,29 +46,28 @@ st.markdown("""
         padding: 10px;
     }
 
-    /* Chat message bubbles */
+    /* Chat bubbles */
     .chat-message {
         max-width: 75%;
         padding: 12px;
-        border-radius: 10px;
+        border-radius: 15px;
         font-size: 16px;
-        line-height: 1.4;
         text-align: left;
         word-wrap: break-word;
         margin: 5px 0;
     }
 
-    /* User message (light blue, like ChatGPT) */
+    /* User message */
     .chat-message.user {
-        background-color: #e3efff;
+        background-color: #dbeafe;
         border-left: 4px solid #3b82f6;
         align-self: flex-end;
         color: #000;
     }
 
-    /* AI response (light gray, like ChatGPT) */
+    /* AI response */
     .chat-message.assistant {
-        background-color: #f7f7f8;
+        background-color: #f3f4f6;
         border-left: 4px solid #22c55e;
         align-self: flex-start;
         color: #000;
@@ -73,22 +81,26 @@ st.markdown("""
         padding: 10px;
     }
 
-    /* Button styling */
-    .stButton>button {
+    /* Floating send button */
+    .stButton>button.send-button {
         background-color: #3b82f6 !important;
         color: white !important;
-        border-radius: 8px;
+        border-radius: 50%;
+        width: 45px;
+        height: 45px;
+        position: absolute;
+        right: 10px;
+        bottom: 10px;
         transition: all 0.2s ease-in-out;
     }
 
-    .stButton>button:hover {
+    .stButton>button.send-button:hover {
         background-color: #2563eb !important;
-        transform: scale(1.05);
+        transform: scale(1.1);
     }
+
 </style>
 """, unsafe_allow_html=True)
-
-
 # **2️⃣ Load ML Models (Optimized with Cache)**
 @st.cache_resource
 def load_model(filename):
