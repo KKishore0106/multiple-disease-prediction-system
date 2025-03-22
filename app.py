@@ -20,21 +20,10 @@ st.markdown("""
         border-right: 2px solid #444;
         padding: 20px;
     }
-     /* Move Title and Subtitle Down */
-    .main-title {
-        text-align: center;
-        font-size: 28px;
-        font-weight: bold;
-        margin-top: 120px; /* Increased to move it down */
-        margin-bottom: 5px;
-        color: #333;
-    }
-
-    .subtitle {
-        text-align: center;
-        font-size: 15px;
-        color: #555;
-        margin-bottom: 10px;
+      /* Padding only for title and subtitle */
+        .title-container {
+            padding-top: 100px; /* Adjust this value to move it further down */
+            text-align: center;
     }
 
     /* Centralized Content */
@@ -56,15 +45,11 @@ st.markdown("""
     }
 
 </style>
+<div class="title-container">
+        <h1 style="color: #333;">Medical AI Assistant</h1>
+        <p style="color: #555; font-size: 16px;">Chat with our AI to check for diseases or get health advice</p>
+    </div>
 """, unsafe_allow_html=True)
-
-# Display Centered Title
-st.markdown('<h1 class="main-title">Medical AI Assistant</h1>', unsafe_allow_html=True)
-
-# Subtitle for health advice
-st.markdown('<p class="subtitle">Chat with our AI to check for diseases or get health advice</p>', unsafe_allow_html=True)
-
-
 
 # **2️⃣ Load ML Models (Optimized with Cache)**
 @st.cache_resource
