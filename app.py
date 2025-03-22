@@ -415,8 +415,17 @@ def handle_final_prediction(prompt):
     """Handle generating the final prediction"""
     disease = st.session_state.disease_name
     
+    # Debug information
+    print(f"In handle_final_prediction")
+    print(f"Disease: {disease}")
+    print(f"Input values: {st.session_state.input_values}")
+    print(f"Required fields: {disease_fields[disease].keys()}")
+    
     # Make sure we have all required fields
-    if len(st.session_state.input_values) == len(disease_fields[disease]):
+    missing_fields = [field for field in disease_fields[disease].keys() 
+                     if field not in st.session_state.input_values]
+    
+    if not missing_fields:  # If no missing fields
         prediction_result = get_prediction(disease, st.session_state.input_values)
         
         # Get advice based on prediction
@@ -428,11 +437,23 @@ def handle_final_prediction(prompt):
     
         # Reset to general conversation state
         st.session_state.conversation_state = "general"
+        st.session_state.modifying_field = None
+        st.session_state.disease_name = None
+        st.session_state.input_values = {}
+        st.session_state.field_keys = None
+        st.session_state.current_field_index = 0
+        
         return response
     else:
-        # If missing fields, let's collect them
-        missing_fields = [field for field in disease_fields[disease].keys() if field not in st.session_state.input_values]
-        return f"We still need some information before making a prediction. Let's collect data for {missing_fields[0]} next."
+        # If missing fields, collect them systematically
+        missing_field = missing_fields[0]
+        field_info = disease_fields[disease][missing_field]
+        
+        # Set up to collect the missing field
+        st.session_state.modifying_field = None
+        st.session_state.current_field_index = list(disease_fields[disease].keys()).index(missing_field)
+        
+        return f"We still need information about your {missing_field} ({field_info['description']}). Please enter your {missing_field}. Typical range: {field_info['range']} {field_info['unit']}"
 
 def handle_collecting_inputs_state(prompt):
     """Handle user input when collecting medical data inputs"""
@@ -443,9 +464,18 @@ def handle_collecting_inputs_state(prompt):
     if not hasattr(st.session_state, 'field_keys') or st.session_state.field_keys is None:
         st.session_state.field_keys = list(fields.keys())
     
-    # Make sure current_field_index is within bounds
-    if st.session_state.current_field_index >= len(st.session_state.field_keys):
-        st.session_state.current_field_index = len(st.session_state.field_keys) - 1
+    # Debug print
+    print(f"Current state: {st.session_state.conversation_state}")
+    print(f"Current field index: {st.session_state.current_field_index}")
+    print(f"Total fields: {len(st.session_state.field_keys)}")
+    print(f"User prompt: {prompt}")
+    
+    # Check if all fields have been collected and user confirms for prediction
+    if (st.session_state.current_field_index >= len(st.session_state.field_keys) and 
+        any(x in prompt.lower() for x in ["yes", "yeah", "sure", "okay", "ok", "yep", "y"])):
+        print("All fields collected, generating prediction...")
+        st.session_state.modifying_field = None  # Ensure no field is being modified
+        return handle_final_prediction(prompt)
     
     # Check if user wants to modify a previous value
     modify_patterns = ["change", "modify", "edit", "update", "fix", "correct", "redo"]
@@ -463,26 +493,13 @@ def handle_collecting_inputs_state(prompt):
     # If we're in modify mode, handle the new value
     elif st.session_state.modifying_field is not None:
         return handle_modifying_field(prompt)
-    # Add debugging code here
-    print(f"Current field index: {st.session_state.current_field_index}")
-    print(f"Total fields: {len(st.session_state.field_keys)}")
-    print(f"Current state: {st.session_state.conversation_state}")
-    print(f"Modifying field: {st.session_state.modifying_field}")
-    print(f"Input prompt: {prompt}")
-    # Check for final prediction confirmation
-   elif st.session_state.current_field_index >= len(st.session_state.field_keys):
-        if any(x in prompt.lower() for x in ["yes", "yeah", "sure", "okay", "ok", "yep", "y"]):
-            # Ensure we're not in modifying_field mode
-            st.session_state.modifying_field = None
-            return handle_final_prediction(prompt)
-        elif any(x in prompt.lower() for x in ["no", "nope", "n"]):
-            st.session_state.conversation_state = "general"
-            return "No problem. Is there anything else I can help you with today?"
-        else:
-            return "Would you like to get your prediction now? Please respond with 'yes' or 'no'."
+    
     # Check if user is canceling the current data collection
     elif any(x in prompt.lower() for x in ["cancel", "stop", "quit", "exit", "abort"]):
         st.session_state.conversation_state = "general"
+        st.session_state.modifying_field = None
+        st.session_state.disease_name = None
+        st.session_state.input_values = {}
         return "Input collection canceled. Is there anything else I can help you with today?"
     
     # Check for out-of-range confirmation
