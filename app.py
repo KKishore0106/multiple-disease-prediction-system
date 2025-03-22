@@ -52,7 +52,7 @@ st.markdown("""
         display: flex;
         flex-direction: column;
         align-items: flex-start;
-        gap: 12px;
+        gap: 10px;
         padding: 10px;
     }
 
