@@ -91,7 +91,7 @@ st.markdown("""
         border: 1px solid #ccc;
         border-radius: 10px;
         padding: 5px 15px;
-        width: 90%;
+        width: 100%;
         max-width: 1500px;
         transition: all 0.3s ease-in-out;
     }
