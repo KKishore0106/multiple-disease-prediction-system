@@ -155,7 +155,7 @@ kidney_model = load_model('kidney.pkl')
 breast_cancer_model = load_model('breast_cancer.pkl')
 
 # **3️⃣ Hugging Face API Setup (Cached)**
-HF_API_TOKEN = "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"
+HF_API_TOKEN = "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"
 MODEL_NAME = "meta-llama/Llama-3.3-70B-Instruct"
 headers = {"Authorization": f"Bearer {HF_API_TOKEN}"}
 
