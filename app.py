@@ -50,7 +50,7 @@ st.markdown("""
     /* Chat container */
     .chat-container {
         display: flex;
-        flex-direction: column;
+        flex-direction: row;
         align-items: flex-start;
         gap: 10px;
         padding: 10px;
