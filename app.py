@@ -23,7 +23,7 @@ st.markdown("""
 
     /* Sidebar text */
     .stSidebar h1, .stSidebar h2, .stSidebar h3, .stSidebar p {
-        color: white !important;
+        color: black !important;
     }
 
     /* Title & Subtitle */
