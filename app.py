@@ -660,38 +660,44 @@ if prompt := st.chat_input("Ask me about your health or symptoms..."):
         st.session_state.messages.append({"role": "assistant", "content": response})
 
 # Sidebar with information
+import streamlit as st
+
+# Sidebar Content
 with st.sidebar:
-    st.header("Available Disease Tests")
-    
-    # Create expandable sections for each disease
-    disease_fields = {
-        "Heart Disease": {"Blood Pressure": {"description": "Systolic/Diastolic pressure in mmHg"}},
-        "Diabetes": {"Fasting Blood Sugar": {"description": "Glucose level after fasting (mg/dl)"}},
-        "Parkinson’s": {"Tremor Severity": {"description": "Scale from 0-10"}},
-    }
-    disease_symptoms = {
-        "Heart Disease": ["Chest pain", "Shortness of breath", "Fatigue", "Dizziness", "Nausea"],
-        "Diabetes": ["Increased thirst", "Frequent urination", "Fatigue", "Blurred vision", "Slow-healing wounds"],
-        "Parkinson’s": ["Tremors", "Slow movement", "Muscle stiffness", "Impaired balance", "Speech changes"],
-    }
-    
-    for disease, fields in disease_fields.items():
-        with st.expander(f"{disease} Test"):
-            st.write(f"**Required measurements:**")
-            for field, info in fields.items():
-                st.write(f"- {field}: {info['description']}")
-            
-            # Add common symptoms
-            st.write("**Common symptoms:**")
-            for symptom in disease_symptoms[disease][:5]:  # Show top 5 symptoms
-                st.write(f"- {symptom}")
-    
-    # Disclaimer
-    st.markdown("---")
-    st.caption(
-        """
-        **Disclaimer:** This AI assistant provides information for educational purposes only. 
-        It is not a substitute for professional medical advice, diagnosis, or treatment. 
-        Always seek the advice of your physician or other qualified health provider.
-        """
-    )
+    # Medical-Themed Image
+    st.image("https://www.shutterstock.com/image-vector/ai-medical-healthcare-logo-vector-600nw-2232607603.jpg", use_column_width=True)
+
+    # About AI Medical Assistant
+    st.header("🤖 About AI Medical Assistant")
+    st.markdown("""
+    This AI assistant helps assess health risks for **Diabetes, Heart Disease, and Parkinson’s**.
+    - Uses **machine learning** to provide risk assessments
+    - Suggests **health recommendations** based on symptoms
+    - Can find **nearby hospitals** if needed
+    """)
+
+    st.header("📌 How to Use")
+    st.markdown("""
+    1️⃣ **Ask health questions** - Type any health-related query  
+    2️⃣ **Check disease risk** - Say: "Check my risk for diabetes"  
+    3️⃣ **Describe symptoms** - List any symptoms you’re experiencing  
+    4️⃣ **Get suggestions** - AI provides personalized health tips  
+    """)
+
+    st.divider()  # Adds a visual separator
+
+    # Expandable Disease Information (Only Names)
+    st.header("🩺 Available Disease Tests")
+    diseases = ["Heart Disease", "Diabetes", "Parkinson’s"]
+
+    for disease in diseases:
+        with st.expander(f"🩹 {disease}"):
+            pass  # No additional info, just shows the disease name
+
+    st.divider()
+
+    # Reset Conversation Button
+    if st.button("🔄 Reset Conversation", help="Click to clear chat history"):
+        st.session_state["messages"] = []  # Clear chat history
+        st.rerun()  # Refresh Streamlit UI
+
