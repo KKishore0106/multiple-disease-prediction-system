@@ -605,9 +605,6 @@ if "modifying_field" not in st.session_state:
     st.session_state.modifying_field = None
 
 # **🔟 UI Setup**
-# Page header
-st.title("Medical AI Assistant")
-st.write("Chat with our AI to check for diseases or get health advice")
 
 # Initialize chat history
 if "messages" not in st.session_state:
