@@ -7,45 +7,89 @@ import re
 # **1️⃣ Set up page configuration**
 st.markdown("""
 <style>
-        /* Full page background */
+       /* Full page background */
     .stApp {
         background: white;
         font-family: 'Inter', sans-serif;
     }
 
-    /* Sidebar (Black with Smooth Fade) */
-    .stSidebar {
-        background: linear-gradient(to bottom, #000, #333);
+    /* Sidebar (Black with Fade) */
+    .css-1d391kg {
+        background: linear-gradient(to bottom, #000, #222);
         color: white;
         border-right: 2px solid #444;
         padding: 20px;
     }
 
+    /* Sidebar text */
+    .css-1d391kg h1, .css-1d391kg h2, .css-1d391kg h3, .css-1d391kg p {
+        color: white !important;
+    }
     /* Title & Subtitle Padding */
     .title-container {
         padding-top: 100px; /* Adjust this value to move it further down */
         text-align: center;
     }
 
-    /* Centralized Content */
+    /* Centered Title */
+    .main-title {
+        text-align: center;
+        font-size: 28px;
+        font-weight: bold;
+        margin-top: 10px;
+        color: #333;
+    }
+
+    /* Chat area with padding */
     .block-container {
         background: white;
         border-radius: 12px;
-        padding: 20px 40px; /* Adjusted padding */
-        max-width: 800px; /* Increased max width */
-        margin: auto;
-        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+        padding: 30px 60px; /* Adds space from the sidebar */
     }
 
-    /* Widen the chat input box */
+    /* Chat container */
+    .chat-container {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 10px;
+    }
+
+    /* Chat bubbles */
+    .chat-message {
+        max-width: 75%;
+        padding: 14px;
+        border-radius: 12px;
+        font-size: 16px;
+        text-align: left;
+        word-wrap: break-word;
+        margin: 6px 0;
+    }
+
+    /* User message (Light Blue) */
+    .chat-message.user {
+        background-color: #dbeafe;
+        color: #1e3a8a;
+        border-left: 5px solid #3b82f6;
+        align-self: flex-end;
+    }
+
+    /* AI response (Light Gray) */
+    .chat-message.assistant {
+        background-color: #f3f4f6;
+        color: black;
+        border-left: 5px solid #22c55e;
+        align-self: flex-start;
+    }
+
+    /* Chat input box */
     .stTextInput>div>div>input {
-        width: 100% !important; /* Make it full width */
-        max-width: 900px; /* Increased width */
-        margin: auto; /* Center it */
-        padding: 14px; /* Improve spacing */
-        border-radius: 10px;
+        background-color: #fff;
         border: 1px solid #ccc;
-        box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+        padding: 12px;
+        width: 100%;
     }
 
     /* Floating send button */
@@ -53,11 +97,11 @@ st.markdown("""
         background-color: #3b82f6 !important;
         color: white !important;
         border-radius: 50%;
-        width: 50px;
-        height: 50px;
+        width: 45px;
+        height: 45px;
         position: absolute;
-        right: 20px;
-        bottom: 20px;
+        right: 15px;
+        bottom: 15px;
         transition: all 0.2s ease-in-out;
     }
 
@@ -65,7 +109,7 @@ st.markdown("""
         background-color: #2563eb !important;
         transform: scale(1.1);
     }
-
+ 
 </style>
 <div class="title-container">
         <h1 style="color: #333;">Medical AI Assistant</h1>
