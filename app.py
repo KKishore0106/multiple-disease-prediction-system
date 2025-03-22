@@ -751,46 +751,49 @@ if prompt := st.chat_input("Ask me about your health or symptoms..."):
         
         def process_user_input(prompt):
             """Main function to process user input based on conversation state"""
-    # Process input based on conversation state
-    if st.session_state.conversation_state == "general":
-        response = handle_general_state(prompt)
-    
-    elif st.session_state.conversation_state == "suggesting_disease":
-        response = handle_suggesting_disease_state(prompt)
-    
-    elif st.session_state.conversation_state == "collecting_inputs":
-        response = handle_collecting_inputs(prompt)
-    
-    elif st.session_state.conversation_state == "confirming_data":
-        response = handle_data_confirmation(prompt)
-    
-    elif st.session_state.conversation_state == "ready_for_prediction":
-        response = handle_prediction_confirmation(prompt)
-    
-    elif st.session_state.conversation_state == "modifying_field":
-        if prompt in st.session_state.input_values:
-            # User has specified which field to modify
-            st.session_state.modifying_field = prompt
-            field_info = disease_fields[st.session_state.disease_name][prompt]
-            response = f"Please enter a new value for {prompt}. {field_info['description']} (Typical range: {field_info['range']} {field_info['unit']})"
-        else:
-            # User is providing the value for the field to modify
-            response = handle_modifying_field(prompt)
-    
-    elif st.session_state.conversation_state == "confirming_out_of_range":
-        response = handle_confirming_out_of_range(prompt)
-    
-    else:
-        # Default fallback
-        response = chat_with_llama(prompt, response_type="medical")
-    
-    return response
+            # Process input based on conversation state
+            if st.session_state.conversation_state == "general":
+                response = handle_general_state(prompt)
+            
+            elif st.session_state.conversation_state == "suggesting_disease":
+                response = handle_suggesting_disease_state(prompt)
+            
+            elif st.session_state.conversation_state == "collecting_inputs":
+                response = handle_collecting_inputs(prompt)
+            
+            elif st.session_state.conversation_state == "confirming_data":
+                response = handle_data_confirmation(prompt)
+            
+            elif st.session_state.conversation_state == "ready_for_prediction":
+                response = handle_prediction_confirmation(prompt)
+            
+            elif st.session_state.conversation_state == "modifying_field":
+                if prompt in st.session_state.input_values:
+                    # User has specified which field to modify
+                    st.session_state.modifying_field = prompt
+                    field_info = disease_fields[st.session_state.disease_name][prompt]
+                    response = f"Please enter a new value for {prompt}. {field_info['description']} (Typical range: {field_info['range']} {field_info['unit']})"
+                else:
+                    # User is providing the value for the field to modify
+                    response = handle_modifying_field(prompt)
+            
+            elif st.session_state.conversation_state == "confirming_out_of_range":
+                response = handle_confirming_out_of_range(prompt)
+            
+            else:
+                # Default fallback
+                response = chat_with_llama(prompt, response_type="medical")
+            
+            return response
+        
+        # Get response by calling the process_user_input function
+        response = process_user_input(prompt)
+        
         # Display assistant response in chat message container
         st.markdown(f'<div class="chat-message assistant">{response}</div>', unsafe_allow_html=True)
         
         # Add assistant response to chat history
         st.session_state.messages.append({"role": "assistant", "content": response})
-
 # Sidebar with information
 with st.sidebar:
     # Medical AI Image
