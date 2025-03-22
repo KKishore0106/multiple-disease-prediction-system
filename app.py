@@ -155,13 +155,13 @@ kidney_model = load_model('kidney.pkl')
 breast_cancer_model = load_model('breast_cancer.pkl')
 
 # **3️⃣ Hugging Face API Setup (Cached)**
-HF_API_TOKEN = "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"
-MODEL_NAME = "meta-llama/Llama-3.3-70B-Instruct"
+HF_API_TOKEN = "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"
+MODEL_NAME = "mistralai/Mistral-7B-Instruct-v0.3"
 headers = {"Authorization": f"Bearer {HF_API_TOKEN}"}
 
-# Modify the chat_with_llama function to handle different types of responses
+# Modify the chat_with_mistral function to handle different types of responses
 @st.cache_data
-def chat_with_llama(prompt, response_type="medical"):
+def chat_with_mistral(prompt, response_type="medical"):
     """Calls Hugging Face API with contextual prompting based on response_type"""
     try:
         # Add specific context based on the type of response needed
@@ -463,7 +463,7 @@ def handle_general_state(prompt):
             return symptom_response
         else:
             # If no clear symptoms found, use Mistral
-            return chat_with_llama(f"The user said: '{prompt}'. Respond as a medical AI assistant but avoid making specific diagnoses. Instead, focus on general health information and asking clarifying questions. If they described symptoms, acknowledge them but suggest consulting a healthcare provider for proper diagnosis.")
+            return chat_with_mistral(f"The user said: '{prompt}'. Respond as a medical AI assistant but avoid making specific diagnoses. Instead, focus on general health information and asking clarifying questions. If they described symptoms, acknowledge them but suggest consulting a healthcare provider for proper diagnosis.")
     def is_greeting(text):
          """Check if text contains a greeting"""
          greetings = ["hello", "hi", "hey", "greetings", "good morning", "good afternoon", "good evening", "howdy"]
@@ -474,7 +474,7 @@ def handle_general_state(prompt):
          return "Hello! 👋 How are you feeling today? I'm your AI medical assistant. I can help answer health questions, check for diabetes, heart disease, Parkinson's, liver disease, kidney disease, or breast cancer, or discuss symptoms you might be experiencing."
 
 # Ensure all responses remain medical
-    return chat_with_llama(prompt, response_type="medical")
+    return chat_with_mistral(prompt, response_type="medical")
 
 def handle_suggesting_disease_state(prompt):
     """Handle user input when suggesting a disease to check"""
@@ -738,3 +738,5 @@ with st.sidebar:
     if st.button("🔄 Reset Conversation", help="Click to clear chat history"):
         st.session_state["messages"] = []  # Clear chat history
         st.rerun()  # Refresh Streamlit UI
+
+
