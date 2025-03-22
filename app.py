@@ -156,10 +156,10 @@ breast_cancer_model = load_model('breast_cancer.pkl')
 
 # **3️⃣ Hugging Face API Setup (Cached)**
 HF_API_TOKEN = "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"
-MODEL_NAME = "mistralai/Mistral-7B-Instruct-v0.3"
+MODEL_NAME = "meta-llama/Llama-3.3-70B-Instruct"
 headers = {"Authorization": f"Bearer {HF_API_TOKEN}"}
 
-# Modify the chat_with_mistral function to handle different types of responses
+# Modify the chat_with_llama function to handle different types of responses
 @st.cache_data
 def chat_with_mistral(prompt, response_type="medical"):
     """Calls Hugging Face API with contextual prompting based on response_type"""
