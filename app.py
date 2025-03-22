@@ -17,9 +17,12 @@ def load_model(filename):
         st.error(f"Error loading {filename}: {e}")
         return None
 
-diabetes_model = load_model('diabetes.pkl')
-heart_disease_model = load_model('heart.pkl')
-parkinsons_model = load_model('parkinsons_model.pkl')
+diabetes_model = load_model('diabetes_model.sav')
+heart_disease_model = load_model('heart_disease_model.sav')
+parkinsons_model = load_model('parkinsons_model.sav')
+liver_model = load_model('liver_model.sav')
+kidney_model = load_model('kidney_model.sav')
+breast_cancer_model = load_model('breast_cancer_model.sav')
 
 # **3️⃣ Hugging Face API Setup (Cached)**
 HF_API_TOKEN = "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"
@@ -90,6 +93,46 @@ disease_fields = {
         "Jitter:DDP": {"description": "Average absolute difference of differences between cycles", "range": "0-0.03", "unit": ""},
         "MDVP:Shimmer": {"description": "Local shimmer", "range": "0-0.2", "unit": ""},
         "MDVP:Shimmer(dB)": {"description": "Local shimmer in decibels", "range": "0-2", "unit": "dB"}
+    },
+    "Liver Disease": {
+        "Age": {"description": "Age of the patient", "range": "4-90", "unit": "years"},
+        "Total Bilirubin": {"description": "Total bilirubin level", "range": "0.1-50", "unit": "mg/dL"},
+        "Direct Bilirubin": {"description": "Direct bilirubin level", "range": "0.1-20", "unit": "mg/dL"},
+        "Alkaline Phosphotase": {"description": "Alkaline phosphotase level", "range": "20-300", "unit": "IU/L"},
+        "SGPT": {"description": "Serum glutamic pyruvic transaminase level", "range": "1-300", "unit": "IU/L"},
+        "SGOT": {"description": "Serum glutamic oxaloacetic transaminase level", "range": "1-300", "unit": "IU/L"},
+        "Total Proteins": {"description": "Total proteins level", "range": "5.5-9", "unit": "g/dL"},
+        "Albumin": {"description": "Albumin level", "range": "2.5-5.5", "unit": "g/dL"},
+        "Albumin/Globulin Ratio": {"description": "Ratio of albumin to globulin", "range": "0.3-2.5", "unit": ""}
+    },
+    "Kidney Disease": {
+        "Age": {"description": "Age of the patient", "range": "2-90", "unit": "years"},
+        "Blood Pressure": {"description": "Blood pressure", "range": "50-180", "unit": "mm Hg"},
+        "Specific Gravity": {"description": "Specific gravity of urine", "range": "1.005-1.030", "unit": ""},
+        "Albumin": {"description": "Albumin level", "range": "0-5", "unit": ""},
+        "Sugar": {"description": "Sugar level", "range": "0-5", "unit": ""},
+        "Red Blood Cells": {"description": "Red blood cells (0 = normal, 1 = abnormal)", "range": "0-1", "unit": ""},
+        "Pus Cell": {"description": "Pus cell (0 = normal, 1 = abnormal)", "range": "0-1", "unit": ""},
+        "Pus Cell Clumps": {"description": "Pus cell clumps (0 = not present, 1 = present)", "range": "0-1", "unit": ""},
+        "Bacteria": {"description": "Bacteria (0 = not present, 1 = present)", "range": "0-1", "unit": ""},
+        "Blood Glucose Random": {"description": "Random blood glucose level", "range": "70-490", "unit": "mg/dL"},
+        "Blood Urea": {"description": "Blood urea level", "range": "1.5-100", "unit": "mg/dL"},
+        "Serum Creatinine": {"description": "Serum creatinine level", "range": "0.4-15", "unit": "mg/dL"},
+        "Sodium": {"description": "Sodium level", "range": "111-160", "unit": "mEq/L"},
+        "Potassium": {"description": "Potassium level", "range": "2.5-7.5", "unit": "mEq/L"},
+        "Hemoglobin": {"description": "Hemoglobin level", "range": "3.1-17.8", "unit": "g/dL"}
+    },
+    "Breast Cancer": {
+        "Radius Mean": {"description": "Mean of distances from center to points on the perimeter", "range": "6.5-28", "unit": "mm"},
+        "Texture Mean": {"description": "Standard deviation of gray-scale values", "range": "9.7-40", "unit": ""},
+        "Perimeter Mean": {"description": "Mean size of the core tumor", "range": "43-190", "unit": "mm"},
+        "Area Mean": {"description": "Mean area of the core tumor", "range": "140-2500", "unit": "sq. mm"},
+        "Smoothness Mean": {"description": "Mean of local variation in radius lengths", "range": "0.05-0.16", "unit": ""},
+        "Compactness Mean": {"description": "Mean of perimeter^2 / area - 1.0", "range": "0.02-0.35", "unit": ""},
+        "Concavity Mean": {"description": "Mean of severity of concave portions of the contour", "range": "0-0.43", "unit": ""},
+        "Concave Points Mean": {"description": "Mean number of concave portions of the contour", "range": "0-0.2", "unit": ""},
+        "Symmetry Mean": {"description": "Mean symmetry", "range": "0.1-0.3", "unit": ""},
+        "Fractal Dimension Mean": {"description": "Mean 'coastline approximation' - 1", "range": "0.05-0.1", "unit": ""}
     }
 }
 
@@ -111,6 +154,24 @@ disease_symptoms = {
         "tremor", "shaking", "rigid muscles", "impaired posture", "balance problems", 
         "loss of automatic movements", "speech changes", "writing changes", 
         "slowed movement", "bradykinesia"
+    ],
+    
+    "Liver Disease": [
+        "yellowing skin", "yellowing eyes", "jaundice", "abdominal pain", "swelling", 
+        "dark urine", "pale stool", "chronic fatigue", "nausea", "vomiting", 
+        "loss of appetite", "itchy skin"
+    ],
+    
+    "Kidney Disease": [
+        "decreased urine output", "fluid retention", "swelling", "shortness of breath", 
+        "fatigue", "confusion", "nausea", "weakness", "irregular heartbeat", 
+        "chest pain", "high blood pressure", "foamy urine"
+    ],
+    
+    "Breast Cancer": [
+        "breast lump", "change in breast size", "change in breast shape", 
+        "breast skin dimpling", "breast pain", "nipple retraction", 
+        "red or flaky skin", "nipple discharge", "swelling under arm"
     ]
 }
 
@@ -120,37 +181,35 @@ def get_prediction(disease, input_values):
         # Convert input values to a NumPy array
         input_data = np.array(list(map(float, input_values.values()))).reshape(1, -1)
         
+        # Determine which model to use
         if disease == "Diabetes" and diabetes_model:
-            # Check what predict returns
-            if hasattr(diabetes_model, "predict_proba"):
-                prediction = diabetes_model.predict_proba(input_data)[0][1]
-            else:
-                # If predict returns class labels directly
-                raw_prediction = diabetes_model.predict(input_data)
-                prediction = raw_prediction[0]
-                
+            prediction = diabetes_model.predict(input_data)[0]
         elif disease == "Heart Disease" and heart_disease_model: 
-            prediction = heart_disease_model.predict_proba(input_data)[0][1]
-        
+            prediction = heart_disease_model.predict(input_data)[0]
         elif disease == "Parkinson's" and parkinsons_model:
-            prediction = parkinsons_model.predict_proba(input_data)[0][1]
-        
+            prediction = parkinsons_model.predict(input_data)[0]
+        elif disease == "Liver Disease" and liver_model:
+            prediction = liver_model.predict(input_data)[0]
+        elif disease == "Kidney Disease" and kidney_model:
+            prediction = kidney_model.predict(input_data)[0]
+        elif disease == "Breast Cancer" and breast_cancer_model:
+            prediction = breast_cancer_model.predict(input_data)[0]
         else:
-            return "⚠️ Model not available.", None
+            return "⚠️ Model not available."
         
-        risk_level = "High" if prediction >= 0.7 else "Medium" if prediction >= 0.4 else "Low"
-        prediction_percent = round(prediction * 100, 1)
+        # Return binary prediction (0 = negative, 1 = positive)
+        result = "Positive" if prediction == 1 else "Negative"
+        result_text = f"Based on your inputs, the prediction for {disease} is: **{result}**"
         
-        result_text = f"Based on your inputs, your risk level for {disease} is: **{risk_level}** ({prediction_percent}% probability)"
-        return result_text, risk_level
+        return result_text
     
     except ValueError:
-        return "⚠️ Invalid input detected. Please enter numeric values only.", None
+        return "⚠️ Invalid input detected. Please enter numeric values only."
     except IndexError:
         # Add specific handling for the indexing error
-        return "⚠️ Prediction format error. Check model output format.", None
+        return "⚠️ Prediction format error. Check model output format."
     except Exception as e:
-        return f"⚠️ Unexpected error: {str(e)}", None
+        return f"⚠️ Unexpected error: {str(e)}"
 
 # **6️⃣ Symptom Analyzer Function**
 def analyze_symptoms(user_input):
@@ -174,10 +233,10 @@ def analyze_symptoms(user_input):
         if top_disease["count"] >= 2:  # At least two symptoms needed for a tentative suggestion
             response = f"I noticed you mentioned {', '.join(top_disease['symptoms'])}. "
             response += f"These could be associated with {top_disease['disease']}. "
-            response += f"Would you like to check your risk for {top_disease['disease']}? (yes/no)"
+            response += f"Would you like to check for {top_disease['disease']}? (yes/no)"
             return response, top_disease["disease"]
         else:
-            response = "I noticed you mentioned some health concerns. Would you like to check your risk for a specific disease? (Diabetes, Heart Disease, or Parkinson's)"
+            response = "I noticed you mentioned some health concerns. Would you like to check for a specific disease? (Diabetes, Heart Disease, Parkinson's, Liver Disease, Kidney Disease, or Breast Cancer)"
             return response, None
     else:
         return None, None
@@ -194,7 +253,7 @@ if "messages" not in st.session_state:
     # Add initial greeting
     st.session_state.messages.append({
         "role": "assistant", 
-        "content": "👋 Hello! I'm your AI medical assistant. I can help answer health questions, analyze symptoms, or assess your risk for diabetes, heart disease, or Parkinson's disease. How can I help you today?"
+        "content": "👋 Hello! I'm your AI medical assistant. I can help answer health questions, analyze symptoms, or assess your condition for diabetes, heart disease, Parkinson's disease, liver disease, kidney disease, or breast cancer. How can I help you today?"
     })
 
 if "conversation_state" not in st.session_state:
@@ -205,14 +264,10 @@ if "input_values" not in st.session_state:
     st.session_state.input_values = {}
 if "current_field_index" not in st.session_state:
     st.session_state.current_field_index = 0
-if "risk_level" not in st.session_state:
-    st.session_state.risk_level = None
 if "field_keys" not in st.session_state:
     st.session_state.field_keys = []
 if "modifying_field" not in st.session_state:
     st.session_state.modifying_field = None
-if "risk_assessed" not in st.session_state:  # Add this flag
-    st.session_state.risk_assessed = False
 
 # **9️⃣ Display chat history**
 for message in st.session_state.messages:
@@ -245,11 +300,10 @@ if prompt:
                     st.session_state.input_values = {}
                     st.session_state.field_keys = list(disease_fields[disease].keys())
                     st.session_state.current_field_index = 0
-                    st.session_state.risk_assessed = False  # Reset risk assessment flag
                     current_field = st.session_state.field_keys[0]
                     field_info = disease_fields[disease][current_field]
                     
-                    response = f"I'll help you assess your risk for {disease}. I'll need to collect some medical information.\n\n"
+                    response = f"I'll help you check for {disease}. I'll need to collect some medical information.\n\n"
                     response += f"First, please enter your {current_field} ({field_info['description']}). "
                     response += f"Typical range: {field_info['range']} {field_info['unit']}"
                     
@@ -269,7 +323,7 @@ if prompt:
         
         # For greetings or general questions, use Mistral
         elif is_greeting:
-            response = "Hello! 👋 How are you feeling today? I'm your AI medical assistant. I can help answer health questions, check your risk for diabetes, heart disease, or Parkinson's, or discuss symptoms you might be experiencing."
+            response = "Hello! 👋 How are you feeling today? I'm your AI medical assistant. I can help answer health questions, check for diabetes, heart disease, Parkinson's, liver disease, kidney disease, or breast cancer, or discuss symptoms you might be experiencing."
         else:
             # For general health questions
             response = chat_with_mistral(f"The user said: '{prompt}'. Respond as a medical AI assistant but avoid making specific diagnoses. Instead, focus on general health information and suggesting next steps. Always maintain a friendly and helpful tone.")
@@ -280,17 +334,16 @@ if prompt:
             st.session_state.input_values = {}
             st.session_state.field_keys = list(disease_fields[st.session_state.disease_name].keys())
             st.session_state.current_field_index = 0
-            st.session_state.risk_assessed = False  # Reset risk assessment flag
             current_field = st.session_state.field_keys[0]
             field_info = disease_fields[st.session_state.disease_name][current_field]
             
-            response = f"Great! Let's check your risk for {st.session_state.disease_name}. I'll need some medical information.\n\n"
+            response = f"Great! Let's check for {st.session_state.disease_name}. I'll need some medical information.\n\n"
             response += f"First, please enter your {current_field} ({field_info['description']}). "
             response += f"Typical range: {field_info['range']} {field_info['unit']}"
             
             st.session_state.conversation_state = "collecting_inputs"
         else:
-            response = "No problem. Is there another disease you'd like to check (Diabetes, Heart Disease, or Parkinson's), or do you have other health questions I can help with?"
+            response = "No problem. Is there another disease you'd like to check (Diabetes, Heart Disease, Parkinson's, Liver Disease, Kidney Disease, or Breast Cancer), or do you have other health questions I can help with?"
             st.session_state.conversation_state = "general"
     
     # COLLECTING INPUTS STATE
@@ -309,35 +362,9 @@ if prompt:
         # Now safely get the current field
         current_field = st.session_state.field_keys[st.session_state.current_field_index]
         
-        # Handle risk assessment requests specially 
-        if ("risk assessment" in prompt.lower() or any(x in prompt.lower() for x in ["get my results", "assess my risk"])) and len(st.session_state.input_values) > 0:
-            # Only do assessment if we haven't already (prevents duplicate messages)
-            if not st.session_state.risk_assessed:
-                prediction_result, risk_level = get_prediction(disease, st.session_state.input_values)
-                st.session_state.risk_level = risk_level
-                st.session_state.risk_assessed = True  # Mark as assessed
-                
-                response = f"{prediction_result}\n\n"
-                
-                if risk_level == "High":
-                    response += "⚠️ **Important:** This indicates a significant risk level. "
-                    response += "I strongly recommend consulting with a healthcare professional for proper evaluation and diagnosis.\n\n"
-                elif risk_level == "Medium":
-                    response += "⚠️ This indicates a moderate risk level. "
-                    response += "Consider discussing these results with a healthcare provider during your next visit.\n\n"
-                else:  # Low
-                    response += "✅ This indicates a low risk level. "
-                    response += "Continue maintaining a healthy lifestyle and regular check-ups.\n\n"
-                
-                response += "Would you like some personalized health suggestions based on your risk level? (yes/no)"
-                st.session_state.conversation_state = "post_assessment"
-            else:
-                # If already assessed, just ask about suggestions
-                response = "Would you like some personalized health suggestions based on your risk level? (yes/no)"
-                st.session_state.conversation_state = "post_assessment"
-            
         # Check if user wants to modify a previous value
-        elif any(pattern in prompt.lower() for pattern in ["change", "modify", "edit", "update", "fix", "correct", "redo"]) and st.session_state.current_field_index > 0:
+        modify_patterns = ["change", "modify", "edit", "update", "fix", "correct", "redo"]
+        if any(pattern in prompt.lower() for pattern in modify_patterns) and st.session_state.current_field_index > 0:
             # Try to identify which field they want to change
             for field in st.session_state.field_keys:
                 if field.lower() in prompt.lower() or any(word in prompt.lower() for word in field.lower().split()):
@@ -363,7 +390,6 @@ if prompt:
                 else:
                     st.session_state.input_values[field] = float_value
                     st.session_state.modifying_field = None
-                    st.session_state.risk_assessed = False  # Reset since data changed
                     
                     # Confirm the change and show current progress
                     response = f"✅ Updated {field} to {float_value}.\n\nHere's what we have so far:\n"
@@ -376,7 +402,7 @@ if prompt:
                         response += f"\nPlease enter your {current_field} ({field_info['description']}). "
                         response += f"Typical range: {field_info['range']} {field_info['unit']}"
                     else:
-                        response += "\nWould you like to get your risk assessment now? (yes/no)"
+                        response += "\nWould you like to get your prediction now? (yes/no)"
             except ValueError:
                 response = f"⚠️ Please enter a valid number for {st.session_state.modifying_field}."
         
@@ -408,37 +434,26 @@ if prompt:
                         response = "Thanks for providing all the information. Here's a summary of what you entered:\n\n"
                         for field, value in st.session_state.input_values.items():
                             response += f"- {field}: {value}\n"
-                        response += "\nWould you like to get your risk assessment now? (yes/no)"
+                        response += "\nWould you like to get your prediction now? (yes/no)"
             except ValueError:
                 if any(x in prompt.lower() for x in ["yes", "yeah", "sure", "okay", "ok", "yep", "y"]):
                     # If they confirm an out-of-range value
                     current_field = st.session_state.field_keys[st.session_state.current_field_index]
                     try:
-                        # Attempt to find the last numeric value from the chat history
-                        last_value = None
-                        for i in range(len(st.session_state.messages) - 2, 0, -1):
-                            try:
-                                last_value = float(st.session_state.messages[i]["content"])
-                                break
-                            except:
-                                continue
-                                
-                        if last_value is not None:
-                            st.session_state.input_values[current_field] = last_value
-                            st.session_state.current_field_index += 1
-                            
-                            if st.session_state.current_field_index < len(st.session_state.field_keys):
-                                next_field = st.session_state.field_keys[st.session_state.current_field_index]
-                                field_info = fields[next_field]
-                                response = f"Noted. Now, please enter your {next_field} ({field_info['description']}). "
-                                response += f"Typical range: {field_info['range']} {field_info['unit']}"
-                            else:
-                                response = "Thanks for providing all the information. Here's a summary of what you entered:\n\n"
-                                for field, value in st.session_state.input_values.items():
-                                    response += f"- {field}: {value}\n"
-                                response += "\nWould you like to get your risk assessment now? (yes/no)"
+                        last_value = float(st.session_state.messages[-3]["content"])
+                        st.session_state.input_values[current_field] = last_value
+                        st.session_state.current_field_index += 1
+                        
+                        if st.session_state.current_field_index < len(st.session_state.field_keys):
+                            next_field = st.session_state.field_keys[st.session_state.current_field_index]
+                            field_info = fields[next_field]
+                            response = f"Noted. Now, please enter your {next_field} ({field_info['description']}). "
+                            response += f"Typical range: {field_info['range']} {field_info['unit']}"
                         else:
-                            response = f"Let's try again. Please enter a numeric value for {current_field}."
+                            response = "Thanks for providing all the information. Here's a summary of what you entered:\n\n"
+                            for field, value in st.session_state.input_values.items():
+                                response += f"- {field}: {value}\n"
+                            response += "\nWould you like to get your prediction now? (yes/no)"
                     except:
                         response = f"Let's try again. Please enter a numeric value for {current_field}."
                 elif any(x in prompt.lower() for x in ["no", "nope", "n"]):
@@ -447,78 +462,78 @@ if prompt:
                     field_info = fields[current_field]
                     response = f"Let's try again. Please enter a new value for {current_field} ({field_info['description']}). Typical range: {field_info['range']} {field_info['unit']}"
                 else:
-                    # Handle other non-numeric inputs during collection
-                    current_field = st.session_state.field_keys[st.session_state.current_field_index]
-                    response = f"⚠️ Please enter a valid number for {current_field}."
-    
-    # Special handling for final risk assessment request
-    if st.session_state.conversation_state == "collecting_inputs" and len(st.session_state.input_values) == len(st.session_state.field_keys) and any(x in prompt.lower() for x in ["yes", "yeah", "sure", "okay", "ok", "yep", "y"]) and not st.session_state.risk_assessed:
-        # Generate prediction
-        prediction_result, risk_level = get_prediction(st.session_state.disease_name, st.session_state.input_values)
-        st.session_state.risk_level = risk_level
-        st.session_state.risk_assessed = True
+                    response = f"I didn't understand that. Please enter a numeric value for {current_field}."
         
-        # Format response with prediction and next steps
-        response = f"{prediction_result}\n\n"
-        
-        if risk_level == "High":
-            response += "⚠️ **Important:** This indicates a significant risk level. "
-            response += "I strongly recommend consulting with a healthcare professional for proper evaluation and diagnosis.\n\n"
-        elif risk_level == "Medium":
-            response += "⚠️ This indicates a moderate risk level. "
-            response += "Consider discussing these results with a healthcare provider during your next visit.\n\n"
-        else:  # Low
-            response += "✅ This indicates a low risk level. "
-            response += "Continue maintaining a healthy lifestyle and regular check-ups.\n\n"
-        
-        response += "Would you like some personalized health suggestions based on your risk level? (yes/no)"
-        st.session_state.conversation_state = "post_assessment"
-    
-    # POST ASSESSMENT STATE
-    elif st.session_state.conversation_state == "post_assessment":
-        if any(x in prompt.lower() for x in ["yes", "yeah", "sure", "okay", "ok", "yep", "y"]):
-            # Generate personalized health suggestions
-            disease = st.session_state.disease_name
-            risk = st.session_state.risk_level
+        # Process final prediction if user confirms
+        if "Would you like to get your prediction now?" in st.session_state.messages[-1]["content"] and any(x in prompt.lower() for x in ["yes", "yeah", "sure", "okay", "ok", "yep", "y"]):
+            prediction_result = get_prediction(disease, st.session_state.input_values)
             
-            suggestions_prompt = f"""
-            As a medical AI assistant, provide personalized health suggestions for someone with {risk} risk of {disease}. 
-            Include lifestyle modifications, diet recommendations, and when to seek medical attention. 
-            Format the response in clear sections with bullet points. Keep it concise and practical.
-            User values: {st.session_state.input_values}
-            """
+            # Get advice based on prediction
+            if "Positive" in prediction_result:
+                medical_advice = chat_with_mistral(f"Provide concise, helpful general information and lifestyle advice for someone who has tested positive for {disease}. Do not claim to diagnose the person and remind them to consult a healthcare professional.")
+                response = f"{prediction_result}\n\n{medical_advice}\n\nPlease note: This is not a medical diagnosis. Always consult with a healthcare professional for proper evaluation and treatment."
+            else:
+                medical_advice = chat_with_mistral(f"Provide concise, helpful general information and lifestyle advice for someone who wants to maintain good health and prevent {disease}. Include preventive measures.")
+                response = f"{prediction_result}\n\nThat's good news! Here's some advice on maintaining your health:\n\n{medical_advice}\n\nPlease note: This is not a medical diagnosis. Always consult with a healthcare professional for regular check-ups."
             
-            response = chat_with_mistral(suggestions_prompt)
-            response += "\n\nIs there anything specific you'd like to know about managing your health?"
-        else:
-            response = "Alright. Is there anything else I can help you with today?"
+            # Reset conversation state
             st.session_state.conversation_state = "general"
+            st.session_state.disease_name = None
+            st.session_state.input_values = {}
+            st.session_state.current_field_index = 0
+            st.session_state.field_keys = []
+            
+        # If user says no to prediction
+        elif "Would you like to get your prediction now?" in st.session_state.messages[-1]["content"] and any(x in prompt.lower() for x in ["no", "nope", "n"]):
+            response = "No problem. Is there anything specific you'd like to modify, or would you like to start over? You can also ask me about another health topic."
     
-    # Add assistant response to chat
+    # Add assistant message to chat history
     st.session_state.messages.append({"role": "assistant", "content": response})
+    
+    # Display the new message
     with st.chat_message("assistant", avatar="🧑‍⚕️"):
         st.markdown(response)
 
-# Display sidebar with information
+# Add a sidebar with information
 with st.sidebar:
-    st.header("About This AI Medical Assistant")
+    st.header("📋 About This App")
     st.markdown("""
-    This AI chatbot can help you:
-    - Answer general health questions
-    - Assess risk for diabetes, heart disease, and Parkinson's
-    - Analyze symptoms you might
- - Provide personalized health suggestions
+    This AI Medical Chatbot can:
     
-    **Important Disclaimer:** This tool provides general information only and is not a substitute for professional medical advice, diagnosis, or treatment. Always seek the advice of your physician or other qualified health provider with any questions regarding a medical condition.
+    * Answer general health questions
+    * Analyze symptoms you describe
+    * Assess risk for 6 different conditions
+    * Provide general health information
+    
+    **Supported Conditions:**
+    - Diabetes
+    - Heart Disease
+    - Parkinson's Disease
+    - Liver Disease
+    - Kidney Disease
+    - Breast Cancer
+    
+    **Important Disclaimer:**
+    This application is for informational purposes only and is not a substitute for professional medical advice, diagnosis, or treatment. Always seek the advice of your physician or other qualified health provider with any questions you may have regarding a medical condition.
     """)
+    
+    st.header("📊 How It Works")
+    st.markdown("""
+    1. The app uses machine learning models trained on medical datasets
+    2. Your inputs are compared against patterns found in these datasets
+    3. Results are provided as general risk assessments, not diagnoses
+    4. The chatbot uses AI language model capabilities to answer general questions
+    """)
+    
+    # Add a reset button
+    if st.button("Reset Conversation"):
+        st.session_state.messages = [{"role": "assistant", "content": "👋 Hello! I'm your AI medical assistant. I can help answer health questions, analyze symptoms, or assess your condition for diabetes, heart disease, Parkinson's disease, liver disease, kidney disease, or breast cancer. How can I help you today?"}]
+        st.session_state.conversation_state = "general"
+        st.session_state.disease_name = None
+        st.session_state.input_values = {}
+        st.session_state.current_field_index = 0
+        st.session_state.field_keys = []
+        st.session_state.modifying_field = None
+        st.experimental_rerun()
 
-    st.header("How to Use")
-    st.markdown("""
-    1. **Ask health questions** - Type any health-related question
-    2. **Check disease risk** - Say "Check my risk for diabetes" (or heart disease/Parkinson's)
-    3. **Describe symptoms** - Tell the bot about any symptoms you're experiencing
-    4. **Get suggestions** - Ask for personalized health recommendations
-    
-    You can always type "change [field name]" to modify a previously entered value.
-    """)
 
