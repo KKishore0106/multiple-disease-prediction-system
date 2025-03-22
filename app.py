@@ -27,7 +27,7 @@ st.markdown("""
     }
     /* Title & Subtitle Padding */
     .title-container {
-        padding-top: 100px; /* Adjust this value to move it further down */
+        padding-top: 50px; /* Adjust this value to move it further down */
         text-align: center;
     }
 
