@@ -5,6 +5,7 @@ import requests
 import re
 
 # **1️⃣ Set up page configuration**
+st.markdown("""
 <style>
     /* Full page background */
     .stApp {
@@ -130,6 +131,7 @@ import re
     <h1 style="color: #333;">Medical AI Assistant</h1>
     <p style="color: #555; font-size: 16px;">Chat with our AI to check for diseases or get health advice</p>
 </div>
+""", unsafe_allow_html=True)
 
 
 # **2️⃣ Load ML Models (Optimized with Cache)**
