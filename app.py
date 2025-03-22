@@ -415,17 +415,10 @@ def handle_final_prediction(prompt):
     """Handle generating the final prediction"""
     disease = st.session_state.disease_name
     
-    # Debug information
-    print(f"In handle_final_prediction")
-    print(f"Disease: {disease}")
-    print(f"Input values: {st.session_state.input_values}")
-    print(f"Required fields: {disease_fields[disease].keys()}")
+    # Skip trying to parse the confirmation as a number
     
     # Make sure we have all required fields
-    missing_fields = [field for field in disease_fields[disease].keys() 
-                     if field not in st.session_state.input_values]
-    
-    if not missing_fields:  # If no missing fields
+    if len(st.session_state.input_values) == len(disease_fields[disease]):
         prediction_result = get_prediction(disease, st.session_state.input_values)
         
         # Get advice based on prediction
@@ -437,24 +430,11 @@ def handle_final_prediction(prompt):
     
         # Reset to general conversation state
         st.session_state.conversation_state = "general"
-        st.session_state.modifying_field = None
-        st.session_state.disease_name = None
-        st.session_state.input_values = {}
-        st.session_state.field_keys = None
-        st.session_state.current_field_index = 0
-        
         return response
     else:
-        # If missing fields, collect them systematically
-        missing_field = missing_fields[0]
-        field_info = disease_fields[disease][missing_field]
-        
-        # Set up to collect the missing field
-        st.session_state.modifying_field = None
-        st.session_state.current_field_index = list(disease_fields[disease].keys()).index(missing_field)
-        
-        return f"We still need information about your {missing_field} ({field_info['description']}). Please enter your {missing_field}. Typical range: {field_info['range']} {field_info['unit']}"
-
+        # If missing fields, let's collect them
+        missing_fields = [field for field in disease_fields[disease].keys() if field not in st.session_state.input_values]
+        return f"We still need some information before making a prediction. Let's collect data for {missing_fields[0]} next."
 def handle_collecting_inputs_state(prompt):
     """Handle user input when collecting medical data inputs"""
     disease = st.session_state.disease_name
