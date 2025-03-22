@@ -20,14 +20,13 @@ st.markdown("""
         border-right: 2px solid #444;
         padding: 20px;
     }
-
-    /* Centered Title */
+     /* Centered Title */
     .main-title {
         text-align: center;
         font-size: 28px;
         font-weight: bold;
-        margin-top: 5px; /* Reduced top margin */
-        margin-bottom: 2px; /* Reduced bottom margin */
+        margin-top: 40px; /* Increased top margin to push it downward */
+        margin-bottom: 5px;
         color: #333;
     }
 
@@ -36,7 +35,7 @@ st.markdown("""
         text-align: center;
         font-size: 15px;
         color: #555;
-        margin-bottom: 5px; /* Reduced bottom margin */
+        margin-bottom: 10px;
     }
 
     /* Centralized Content */
