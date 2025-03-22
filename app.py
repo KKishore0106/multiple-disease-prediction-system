@@ -167,10 +167,7 @@ def chat_with_mistral(prompt, response_type="medical"):
         # Add specific context based on the type of response needed
         if response_type == "medical":
             system_prompt = "You are a helpful medical AI assistant. Provide accurate health information without making diagnoses. Be concise but thorough."
-        elif response_type == "casual":
-            system_prompt = "You are a friendly conversational AI. Keep responses short, engaging, and natural. Ask thoughtful follow-up questions."
-        elif response_type == "educational":
-            system_prompt = "You are an educational AI that explains medical concepts in simple terms. Use analogies when helpful."
+        
         else:
             system_prompt = "You are a helpful AI assistant."
         
@@ -182,7 +179,7 @@ User message: {prompt} [/INST]</s>"""
         response = requests.post(
             f"https://api-inference.huggingface.co/models/{MODEL_NAME}",
             headers=headers,
-            json={"inputs": formatted_prompt, "parameters": {"max_new_tokens": 250}}
+            json={"inputs": formatted_prompt, "parameters": {"max_new_tokens": 500}}
         )
         data = response.json()
         
@@ -468,17 +465,12 @@ def handle_general_state(prompt):
             # If no clear symptoms found, use Mistral
             return chat_with_mistral(f"The user said: '{prompt}'. Respond as a medical AI assistant but avoid making specific diagnoses. Instead, focus on general health information and asking clarifying questions. If they described symptoms, acknowledge them but suggest consulting a healthcare provider for proper diagnosis.")
     
-    # For greetings
-    elif is_greeting(prompt):
-        return "Hello! 👋 How are you feeling today? I'm your AI medical assistant. I can help answer health questions, check for diabetes, heart disease, Parkinson's, liver disease, kidney disease, or breast cancer, or discuss symptoms you might be experiencing."
-    
-    
-    # Detect if it's a very short casual message
-    if len(prompt.split()) < 3:
-        return chat_with_mistral(prompt, response_type="casual")
-    else:
-        return chat_with_mistral(prompt, response_type="medical")
+  # For greetings
+        if is_greeting(prompt):
+             return "Hello! 👋 How are you feeling today? I'm your AI medical assistant. I can help answer health questions, check for diabetes, heart disease, Parkinson's, liver disease, kidney disease, or breast cancer, or discuss symptoms you might be experiencing."
 
+             # Ensure all responses remain medical
+        return chat_with_mistral(prompt, response_type="medical")
 def handle_suggesting_disease_state(prompt):
     """Handle user input when suggesting a disease to check"""
     if any(x in prompt.lower() for x in ["yes", "yeah", "sure", "okay", "ok", "yep", "y"]):
