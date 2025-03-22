@@ -19,7 +19,7 @@ def load_model(filename):
 
 diabetes_model = load_model('diabetes.pkl')
 heart_disease_model = load_model('heart.pkl')
-parkinsons_model = load_model('parkinsons_model.sav')
+parkinsons_model = load_model('parkinsons_model.pkl')
 liver_model = load_model('liver.pkl')
 breast_cancer_model = load_model('breast_cancer.pkl')
 kidney_model = load_model('kidney.pkl')
@@ -213,11 +213,10 @@ def get_prediction(disease, input_values):
         else:
             return "⚠️ Model not available.", None
         
-        risk_level = "High" if prediction >= 0.7 else "Medium" if prediction >= 0.4 else "Low"
         prediction_percent = round(prediction * 100, 1)
         
-        result_text = f"Based on your inputs, your risk level for {disease} is: **{risk_level}** ({prediction_percent}% probability)"
-        return result_text, risk_level
+        result_text = f"Based on your inputs, your risk probability for {disease} is: **{prediction_percent}%**"
+        return result_text, prediction_percent
     
     except ValueError:
         return "⚠️ Invalid input detected. Please enter numeric values only.", None
@@ -226,7 +225,7 @@ def get_prediction(disease, input_values):
         return "⚠️ Prediction format error. Check model output format.", None
     except Exception as e:
         return f"⚠️ Unexpected error: {str(e)}", None
-
+    
 # **6️⃣ Symptom Analyzer Function**
 def analyze_symptoms(user_input):
     user_input = user_input.lower()
@@ -264,6 +263,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # **8️⃣ Initialize session state variables**
+# Initialize session state variables
 if "messages" not in st.session_state:
     st.session_state.messages = []
     # Add initial greeting
@@ -280,14 +280,10 @@ if "input_values" not in st.session_state:
     st.session_state.input_values = {}
 if "current_field_index" not in st.session_state:
     st.session_state.current_field_index = 0
-if "risk_level" not in st.session_state:
-    st.session_state.risk_level = None
 if "field_keys" not in st.session_state:
     st.session_state.field_keys = []
 if "modifying_field" not in st.session_state:
     st.session_state.modifying_field = None
-if "risk_assessed" not in st.session_state:  # Add this flag
-    st.session_state.risk_assessed = False
 
 # **9️⃣ Display chat history**
 for message in st.session_state.messages:
@@ -384,35 +380,23 @@ if prompt:
         # Now safely get the current field
         current_field = st.session_state.field_keys[st.session_state.current_field_index]
         
-        # Handle risk assessment requests specially 
-        if ("risk assessment" in prompt.lower() or any(x in prompt.lower() for x in ["get my results", "assess my risk"])) and len(st.session_state.input_values) > 0:
-            # Only do assessment if we haven't already (prevents duplicate messages)
-            if not st.session_state.risk_assessed:
-                prediction_result, risk_level = get_prediction(disease, st.session_state.input_values)
-                st.session_state.risk_level = risk_level
-                st.session_state.risk_assessed = True  # Mark as assessed
-                
-                response = f"{prediction_result}\n\n"
-                
-                if risk_level == "High":
-                    response += "⚠️ **Important:** This indicates a significant risk level. "
-                    response += "I strongly recommend consulting with a healthcare professional for proper evaluation and diagnosis.\n\n"
-                elif risk_level == "Medium":
-                    response += "⚠️ This indicates a moderate risk level. "
-                    response += "Consider discussing these results with a healthcare provider during your next visit.\n\n"
-                else:  # Low
-                    response += "✅ This indicates a low risk level. "
-                    response += "Continue maintaining a healthy lifestyle and regular check-ups.\n\n"
-                
-                response += "Would you like some personalized health suggestions based on your risk level? (yes/no)"
-                st.session_state.conversation_state = "post_assessment"
-            else:
-                # If already assessed, just ask about suggestions
-                response = "Would you like some personalized health suggestions based on your risk level? (yes/no)"
-                st.session_state.conversation_state = "post_assessment"
+       # Handle risk assessment requests specially 
+    if ("risk assessment" in prompt.lower() or any(x in prompt.lower() for x in ["get my results", "assess my risk"])) and len(st.session_state.input_values) > 0:
+        prediction_result, prediction_percent = get_prediction(disease, st.session_state.input_values)
+        response = f"{prediction_result}\n\n"
+        # Let the model suggest next steps based on prediction percent
+        suggestion_prompt = f"""
+        As a medical AI assistant, provide a brief assessment for someone with a {prediction_percent}% risk of {disease}.
+        Include a short statement about what this means and whether they should see a doctor.
+        Keep it concise and practical.
+        """
+        model_suggestion = chat_with_mistral(suggestion_prompt)
+        response += f"{model_suggestion}\n\n"
+        response += "Would you like some personalized health suggestions based on your risk assessment? (yes/no)"
+        st.session_state.conversation_state = "post_assessment"
             
-        # Check if user wants to modify a previous value
-        elif any(pattern in prompt.lower() for pattern in ["change", "modify", "edit", "update", "fix", "correct", "redo"]) and st.session_state.current_field_index > 0:
+        # Check if user wants to modify a previous value"
+    elif any(pattern in prompt.lower() for pattern in ["change", "modify", "edit", "update", "fix", "correct", "redo"]) and st.session_state.current_field_index > 0:
             # Try to identify which field they want to change
             for field in st.session_state.field_keys:
                 if field.lower() in prompt.lower() or any(word in prompt.lower() for word in field.lower().split()):
@@ -425,7 +409,7 @@ if prompt:
                 response = f"Which value would you like to change? Please specify one of: {', '.join(list(st.session_state.input_values.keys()))}"
         
         # If we're in modify mode, handle the new value
-        elif st.session_state.modifying_field is not None:
+    elif st.session_state.modifying_field is not None:
             try:
                 float_value = float(prompt)  # Validate the input is a number
                 field = st.session_state.modifying_field
@@ -456,7 +440,7 @@ if prompt:
                 response = f"⚠️ Please enter a valid number for {st.session_state.modifying_field}."
         
         # Normal input collection flow
-        else:
+    else:
             try:
                 float_value = float(prompt)  # Validate the input is a number
                 
@@ -485,62 +469,76 @@ if prompt:
                         response = "✅ Thanks for providing all the necessary information. "
                         response += "Would you like to get your risk assessment now? (yes/no)"
             except ValueError:
-                # If the input is not a number
-                if "yes" in prompt.lower() and "range" in st.session_state.messages[-2]["content"]:
-                    # They confirmed an out-of-range value
+                if hasattr(st.session_state, 'field_keys') and st.session_state.field_keys and 0 <= st.session_state.current_field_index < len(st.session_state.field_keys):
                     current_field = st.session_state.field_keys[st.session_state.current_field_index]
-                    # Extract the number from their previous input (from chat history)
-                    for msg in reversed(st.session_state.messages):
-                        if msg["role"] == "user":
-                            try:
-                                # Try to find a number in the previous message
-                                numbers = re.findall(r"[-+]?\d*\.\d+|\d+", msg["content"])
-                                if numbers and msg["content"] != prompt:
-                                    float_value = float(numbers[0])
-                                    st.session_state.input_values[current_field] = float_value
-                                    st.session_state.current_field_index += 1
-                                    
-                                    if st.session_state.current_field_index < len(st.session_state.field_keys):
-                                        next_field = st.session_state.field_keys[st.session_state.current_field_index]
-                                        field_info = fields[next_field]
-                                        response = f"✅ Recorded your {current_field} as {float_value}.\n\n"
-                                        response += f"Now, please enter your {next_field} ({field_info['description']}). "
-                                        response += f"Typical range: {field_info['range']} {field_info['unit']}"
-                                    else:
-                                        response = "✅ Thanks for providing all the necessary information. "
-                                        response += "Would you like to get your risk assessment now? (yes/no)"
-                                    break
-                            except:
-                                pass
-                    
-                    if not response:
-                        response = f"I'm still looking for a valid number for {current_field}. Please enter just the number."
-                else:
-                    response = f"⚠️ Please enter a numeric value for {current_field}."
-    
-    # POST ASSESSMENT STATE
-    elif st.session_state.conversation_state == "post_assessment":
-        if any(x in prompt.lower() for x in ["yes", "yeah", "sure", "okay", "ok", "yep", "y"]):
-            disease = st.session_state.disease_name
-            risk_level = st.session_state.risk_level
+        
+        # If the input is not a number
+            if "yes" in prompt.lower() and "range" in st.session_state.messages[-2]["content"]:
+            # They confirmed an out-of-range value
+            # Extract the number from their previous input (from chat history)
+                 for msg in reversed(st.session_state.messages):
+                    if msg["role"] == "user":
+                        try:
+                            numbers = re.findall(r"[-+]?\d*\.\d+|\d+", msg["content"])
+                        if numbers and msg["content"] != prompt:
+                            float_value = float(numbers[0])
+                            st.session_state.input_values[current_field] = float_value
+                            st.session_state.current_field_index += 1
+                            
+                            if st.session_state.current_field_index < len(st.session_state.field_keys):
+                                next_field = st.session_state.field_keys[st.session_state.current_field_index]
+                                field_info = fields[next_field]
+                                response = f"✅ Recorded your {current_field} as {float_value}.\n\n"
+                                response += f"Now, please enter your {next_field} ({field_info['description']}). "
+                                response += f"Typical range: {field_info['range']} {field_info['unit']}"
+                            else:
+                                response = "✅ Thanks for providing all the necessary information. "
+                                response += "Would you like to get your risk assessment now? (yes/no)"
+                            break
+                        except:
+                        pass
             
-            # Generate personalized health suggestions based on disease and risk level
-            suggestion_prompt = f"""
-            As a medical AI assistant, provide 3-5 personalized health suggestions for someone with {risk_level} risk of {disease}.
-            Format as bullet points. Include lifestyle changes, monitoring advice, and when to see a doctor.
-            Keep it concise, practical, and evidence-based. Don't include disclaimers or reminders that you're an AI.
-            """
-            
-            # Get the AI response
-            suggestions = chat_with_mistral(suggestion_prompt)
-            
-            response = f"Here are some personalized health suggestions based on your {risk_level.lower()} risk for {disease}:\n\n{suggestions}\n\n"
-            response += "Remember that these are general suggestions and not a substitute for professional medical advice. Is there anything else I can help you with today?"
-            
-            st.session_state.conversation_state = "general"
+            if not response:
+                response = f"I'm still looking for a valid number for {current_field}. Please enter just the number."
+         else:
+            response = f"⚠️ Please enter a numeric value for {current_field}."
+    else:
+        # Handle the case where the index is invalid
+        if hasattr(st.session_state, 'field_keys') and st.session_state.field_keys:
+            # Reset to a valid index if possible
+            st.session_state.current_field_index = min(
+                max(0, st.session_state.current_field_index),
+                len(st.session_state.field_keys) - 1
+            )
+            current_field = st.session_state.field_keys[st.session_state.current_field_index]
+            response = f"⚠️ Please enter a numeric value for {current_field}."
         else:
-            response = "No problem. Is there anything else I can help you with today? You can check your risk for other conditions or ask general health questions."
+            # No valid fields available
+            response = "⚠️ There was an error in collecting your information. Let's restart the process."
             st.session_state.conversation_state = "general"
+   
+    # POST ASSESSMENT STATE
+elif st.session_state.conversation_state == "post_assessment":
+    if any(x in prompt.lower() for x in ["yes", "yeah", "sure", "okay", "ok", "yep", "y"]):
+        disease = st.session_state.disease_name
+        
+        # Generate personalized health suggestions based on disease
+        suggestion_prompt = f"""
+        As a medical AI assistant, provide 3-5 personalized health suggestions for someone at risk of {disease}.
+        Format as bullet points. Include lifestyle changes, monitoring advice, and when to see a doctor.
+        Keep it concise, practical, and evidence-based. Don't include disclaimers or reminders that you're an AI.
+        """
+        
+        # Get the AI response
+        suggestions = chat_with_mistral(suggestion_prompt)
+        
+        response = f"Here are some personalized health suggestions regarding {disease}:\n\n{suggestions}\n\n"
+        response += "Remember that these are general suggestions and not a substitute for professional medical advice. Is there anything else I can help you with today?"
+        
+        st.session_state.conversation_state = "general"
+    else:
+        response = "No problem. Is there anything else I can help you with today? You can check your risk for other conditions or ask general health questions."
+        st.session_state.conversation_state = "general"
     
     # Display assistant response
     st.session_state.messages.append({"role": "assistant", "content": response})
