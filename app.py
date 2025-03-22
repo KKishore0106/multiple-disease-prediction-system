@@ -43,7 +43,7 @@ st.markdown("""
     /* Chat area */
     .block-container {
         background: white;
-        border-radius: 25px;
+        border-radius: 20px;
         padding: 15px 80px;
         max-width: 1100px; /* Prevents over-expansion */
         margin: left;
