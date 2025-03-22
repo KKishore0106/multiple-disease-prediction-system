@@ -5,16 +5,15 @@ import requests
 import re
 
 # **1️⃣ Set up page configuration**
-st.markdown("""
 <style>
-       /* Full page background */
+    /* Full page background */
     .stApp {
         background: white;
         font-family: 'Inter', sans-serif;
     }
 
-    /* Sidebar (Black with Fade) */
-    .css-1d391kg {
+    /* Sidebar (Black Gradient) */
+    .stSidebar {
         background: linear-gradient(to bottom, #000, #222);
         color: white;
         border-right: 2px solid #444;
@@ -22,16 +21,16 @@ st.markdown("""
     }
 
     /* Sidebar text */
-    .css-1d391kg h1, .css-1d391kg h2, .css-1d391kg h3, .css-1d391kg p {
+    .stSidebar h1, .stSidebar h2, .stSidebar h3, .stSidebar p {
         color: white !important;
     }
-    /* Title & Subtitle Padding */
+
+    /* Title & Subtitle */
     .title-container {
-        padding-top: 50px; /* Adjust this value to move it further down */
+        padding-top: 40px;
         text-align: center;
     }
 
-    /* Centered Title */
     .main-title {
         text-align: center;
         font-size: 28px;
@@ -40,11 +39,13 @@ st.markdown("""
         color: #333;
     }
 
-    /* Chat area with padding */
+    /* Chat area */
     .block-container {
         background: white;
         border-radius: 12px;
-        padding: 30px 60px; /* Adds space from the sidebar */
+        padding: 30px 60px;
+        max-width: 900px; /* Prevents over-expansion */
+        margin: auto;
     }
 
     /* Chat container */
@@ -56,7 +57,7 @@ st.markdown("""
         padding: 10px;
     }
 
-    /* Chat bubbles */
+    /* Chat messages */
     .chat-message {
         max-width: 75%;
         padding: 14px;
@@ -67,7 +68,7 @@ st.markdown("""
         margin: 6px 0;
     }
 
-    /* User message (Light Blue) */
+    /* User messages */
     .chat-message.user {
         background-color: #dbeafe;
         color: #1e3a8a;
@@ -75,7 +76,7 @@ st.markdown("""
         align-self: flex-end;
     }
 
-    /* AI response (Light Gray) */
+    /* AI responses */
     .chat-message.assistant {
         background-color: #f3f4f6;
         color: black;
@@ -87,10 +88,19 @@ st.markdown("""
     .stTextInput>div>div>input {
         background-color: #fff;
         border: 1px solid #ccc;
-        border-radius: 8px;
-        margin-left: 20px;
-        padding:1px;
-        width: 100%;
+        border-radius: 10px;
+        padding: 10px 15px;
+        width: 90%;
+        max-width: 800px;
+        transition: all 0.3s ease-in-out;
+    }
+
+    /* Chat input hover and focus effects */
+    .stTextInput>div>div>input:hover,
+    .stTextInput>div>div>input:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 5px rgba(59, 130, 246, 0.5);
+        outline: none;
     }
 
     /* Floating send button */
@@ -104,19 +114,23 @@ st.markdown("""
         right: 15px;
         bottom: 15px;
         transition: all 0.2s ease-in-out;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
     }
 
     .stButton>button.send-button:hover {
         background-color: #2563eb !important;
         transform: scale(1.1);
     }
- 
 </style>
+
 <div class="title-container">
-        <h1 style="color: #333;">Medical AI Assistant</h1>
-        <p style="color: #555; font-size: 16px;">Chat with our AI to check for diseases or get health advice</p>
-    </div>
-""", unsafe_allow_html=True)
+    <h1 style="color: #333;">Medical AI Assistant</h1>
+    <p style="color: #555; font-size: 16px;">Chat with our AI to check for diseases or get health advice</p>
+</div>
+
 
 # **2️⃣ Load ML Models (Optimized with Cache)**
 @st.cache_resource
