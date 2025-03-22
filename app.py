@@ -155,7 +155,7 @@ kidney_model = load_model('kidney.pkl')
 breast_cancer_model = load_model('breast_cancer.pkl')
 
 # **3️⃣ Hugging Face API Setup (Cached)**
-HF_API_TOKEN = "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"
+HF_API_TOKEN = "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"
 MODEL_NAME = "mistralai/Mistral-7B-Instruct-v0.3"
 headers = {"Authorization": f"Bearer {HF_API_TOKEN}"}
 
