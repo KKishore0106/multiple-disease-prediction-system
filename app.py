@@ -463,13 +463,23 @@ def handle_collecting_inputs_state(prompt):
     # If we're in modify mode, handle the new value
     elif st.session_state.modifying_field is not None:
         return handle_modifying_field(prompt)
-    
+    # Add debugging code here
+    print(f"Current field index: {st.session_state.current_field_index}")
+    print(f"Total fields: {len(st.session_state.field_keys)}")
+    print(f"Current state: {st.session_state.conversation_state}")
+    print(f"Modifying field: {st.session_state.modifying_field}")
+    print(f"Input prompt: {prompt}")
     # Check for final prediction confirmation
-    # Check for final prediction confirmation
-    elif (st.session_state.current_field_index >= len(st.session_state.field_keys) and 
-          any(x in prompt.lower() for x in ["yes", "yeah", "sure", "okay", "ok", "yep", "y"])):
-        return handle_final_prediction(prompt)
-    
+   elif st.session_state.current_field_index >= len(st.session_state.field_keys):
+        if any(x in prompt.lower() for x in ["yes", "yeah", "sure", "okay", "ok", "yep", "y"]):
+            # Ensure we're not in modifying_field mode
+            st.session_state.modifying_field = None
+            return handle_final_prediction(prompt)
+        elif any(x in prompt.lower() for x in ["no", "nope", "n"]):
+            st.session_state.conversation_state = "general"
+            return "No problem. Is there anything else I can help you with today?"
+        else:
+            return "Would you like to get your prediction now? Please respond with 'yes' or 'no'."
     # Check if user is canceling the current data collection
     elif any(x in prompt.lower() for x in ["cancel", "stop", "quit", "exit", "abort"]):
         st.session_state.conversation_state = "general"
