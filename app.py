@@ -16,7 +16,7 @@ import re
     .stSidebar {
         background: linear-gradient(to bottom, #000, #222);
         color: white;
-        border-right: 2px solid #444;
+        border-right:2px solid #444;
         padding: 20px;
     }
 
