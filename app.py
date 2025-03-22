@@ -13,9 +13,9 @@ st.markdown("""
         font-family: 'Inter', sans-serif;
     }
 
-    /* Sidebar (Black with Fade) */
+    /* Sidebar (Black with Smooth Fade) */
     .css-1d391kg {
-        background: linear-gradient(to bottom, #000, #222);
+        background: linear-gradient(to bottom, #000, #333);
         color: white;
         border-right: 2px solid #444;
         padding: 20px;
@@ -31,7 +31,8 @@ st.markdown("""
         text-align: center;
         font-size: 30px;
         font-weight: bold;
-        margin-top: 10px;
+        margin-top: 5px;
+        margin-bottom: 5px;
         color: #333;
     }
 
@@ -40,14 +41,14 @@ st.markdown("""
         text-align: center;
         font-size: 16px;
         color: #555;
-        margin-bottom: 20px;
+        margin-bottom: 15px;
     }
 
     /* Chat area with padding */
     .block-container {
         background: white;
         border-radius: 12px;
-        padding: 30px 50px; /* Adjusted padding */
+        padding: 20px 40px; /* Adjusted padding */
     }
 
     /* Chat container */
@@ -61,7 +62,7 @@ st.markdown("""
 
     /* Chat bubbles */
     .chat-message {
-        max-width: 70%;
+        max-width: 75%;
         padding: 14px;
         border-radius: 12px;
         font-size: 16px;
@@ -127,6 +128,7 @@ st.markdown('<h1 class="main-title">Medical AI Assistant</h1>', unsafe_allow_htm
 
 # Subtitle for health advice
 st.markdown('<p class="subtitle">Chat with our AI to check for diseases or get health advice</p>', unsafe_allow_html=True)
+
 # **2️⃣ Load ML Models (Optimized with Cache)**
 @st.cache_resource
 def load_model(filename):
