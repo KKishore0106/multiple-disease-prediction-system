@@ -592,7 +592,7 @@ def main():
                 st.session_state.messages.append({"role": "assistant", "content": response})
         
         # Automatically scroll to bottom
-        st.experimental_rerun()
+        st.rerun()
 
 # **1️0️⃣ Sidebar for Reference Information**
 def sidebar():
