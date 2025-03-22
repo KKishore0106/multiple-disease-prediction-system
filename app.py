@@ -86,15 +86,17 @@ st.markdown("""
     }
 
     /* Chat input box */
-    .stTextInput>div>div>input {
-        background-color: #fff;
-        border: 1px solid #ccc;
-        border-radius: 10px;
-        padding: 20px;
-        width: 90%;
-        max-width: 1000px;
-        position: relative
-        transition: all 0.3s ease-in-out;
+    .stTextInput>div {
+    position: fixed;
+    bottom: 20px; /* Adjust as needed */
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80%; /* Adjust width */
+    max-width: 1500px;
+    background-color: white;
+    border-radius: 20px;
+    padding: 10px;
+    z-index: 9999;
     }
 
     /* Chat input hover and focus effects */
