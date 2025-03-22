@@ -750,7 +750,7 @@ if prompt := st.chat_input("Ask me about your health or symptoms..."):
         st.session_state.messages.append({"role": "user", "content": prompt})
         
         def process_user_input(prompt):
-    """Main function to process user input based on conversation state"""
+            """Main function to process user input based on conversation state"""
     # Process input based on conversation state
     if st.session_state.conversation_state == "general":
         response = handle_general_state(prompt)
