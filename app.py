@@ -26,8 +26,8 @@ st.markdown("""
         text-align: center;
         font-size: 28px;
         font-weight: bold;
-        margin-top: 10px;
-        margin-bottom: 5px;
+        margin-top: 5px; /* Reduced top margin */
+        margin-bottom: 2px; /* Reduced bottom margin */
         color: #333;
     }
 
@@ -36,7 +36,7 @@ st.markdown("""
         text-align: center;
         font-size: 15px;
         color: #555;
-        margin-bottom: 10px;
+        margin-bottom: 5px; /* Reduced bottom margin */
     }
 
     /* Centralized Content */
@@ -65,6 +65,7 @@ st.markdown('<h1 class="main-title">Medical AI Assistant</h1>', unsafe_allow_htm
 
 # Subtitle for health advice
 st.markdown('<p class="subtitle">Chat with our AI to check for diseases or get health advice</p>', unsafe_allow_html=True)
+
 
 
 # **2️⃣ Load ML Models (Optimized with Cache)**
