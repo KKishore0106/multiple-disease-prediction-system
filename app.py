@@ -13,13 +13,15 @@ st.markdown("""
         background: linear-gradient(to bottom right, #f5f7fa, #e4ecf7);
     }
     
-    .chat-message {
+    .chat-message {   
         padding: 1.5rem;
         border-radius: 0.8rem;
         margin-bottom: 1rem;
         display: flex;
         box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         transition: transform 0.2s;
+        writing-mode: vertical-rl; /* Makes text vertical from right to left */
+        text-orientation: upright; /* Ensures letters are upright */
     }
     
     .chat-message:hover {
