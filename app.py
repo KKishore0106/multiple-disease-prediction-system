@@ -13,9 +13,9 @@ st.markdown("""
         font-family: 'Inter', sans-serif;
     }
 
-    /* Sidebar (Black Gradient) */
+    /* Sidebar  */
     .stSidebar {
-        background: linear-gradient(to bottom, #000, #222);
+        background: linear-gradient(to bottom, #111, #333);
         color: white;
         border-right:2px solid #444;
         padding: 20px;
