@@ -17,12 +17,12 @@ def load_model(filename):
         st.error(f"Error loading {filename}: {e}")
         return None
 
-diabetes_model = load_model('diabetes_model.sav')
-heart_disease_model = load_model('heart_disease_model.sav')
-parkinsons_model = load_model('parkinsons_model.sav')
-liver_model = load_model('liver_model.sav')
-kidney_model = load_model('kidney_model.sav')
-breast_cancer_model = load_model('breast_cancer_model.sav')
+diabetes_model = load_model('diabetes.pkl')
+heart_disease_model = load_model('heart.pkl')
+parkinsons_model = load_model('parkinsons_model.pkl')
+liver_model = load_model('liver.pkl')
+kidney_model = load_model('kidney.pkl')
+breast_cancer_model = load_model('breast_cancer.pkl')
 
 # **3️⃣ Hugging Face API Setup (Cached)**
 HF_API_TOKEN = "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"
