@@ -46,7 +46,7 @@ st.markdown("""
         border-radius: 25px;
         padding: 15px 80px;
         max-width: 900px; /* Prevents over-expansion */
-        margin: auto;
+        margin: left;
     }
 
     /* Chat container */
