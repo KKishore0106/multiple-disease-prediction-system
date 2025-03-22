@@ -61,8 +61,8 @@ st.markdown("""
     /* Chat messages */
     .chat-message {
         max-width: 75%;
-        padding: 5px;
-        border-radius: 12px;
+        padding: 10px;
+        border-radius: 20px;
         font-size: 16px;
         text-align: left;
         word-wrap: break-word;
