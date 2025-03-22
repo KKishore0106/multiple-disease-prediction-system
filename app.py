@@ -788,10 +788,6 @@ if prompt := st.chat_input("Ask me about your health or symptoms..."):
         
         # Get response by calling the process_user_input function
         response = process_user_input(prompt)
-        
-        # Display assistant response in chat message container
-        st.markdown(f'<div class="chat-message assistant">{response}</div>', unsafe_allow_html=True)
-        
         # Add assistant response to chat history
         st.session_state.messages.append({"role": "assistant", "content": response})
 # Sidebar with information
