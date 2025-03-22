@@ -35,14 +35,14 @@ st.markdown("""
         margin: auto;
     }
 
-    /* Chat Input */
-    .stTextInput>div>div>input {
-        background-color: #fff;
-        border: 1px solid #ccc;
-        border-radius: 8px;
-        padding: 10px;
-        width: 100%;
-    }
+     <style>
+        /* Widen the chat input box */
+        .stTextInput>div>div>input {
+            width: 100% !important; /* Make it full width */
+            max-width: 800px; /* Adjust the width as needed */
+            margin: auto; /* Center it */
+            padding: 12px; /* Improve spacing */
+        }
 
 </style>
 <div class="title-container">
