@@ -8,13 +8,19 @@ import re
 st.set_page_config(page_title="Medical AI Chatbot", layout="wide")
 st.markdown("""
 <style>
-    /* Apply a smooth gradient background */
+    /* Apply a full-page gradient background with better contrast */
     .stApp {
-        background: linear-gradient(135deg, #dfe9f3, #ffffff);
+        background: linear-gradient(to bottom right, #8EC5FC, #E0C3FC);
         font-family: 'Arial', sans-serif;
+        color: #ffffff;
     }
 
-    /* Container for chat messages */
+    /* Make text more readable */
+    h1, h2, h3, h4, h5, h6, p, label, span {
+        color: #ffffff !important;
+    }
+
+    /* Chat container */
     .chat-container {
         display: flex;
         flex-direction: column;
@@ -23,39 +29,42 @@ st.markdown("""
         padding: 10px;
     }
 
+    /* Chat messages */
     .chat-message {
-        max-width: 70%;
+        max-width: 75%;
         padding: 15px;
         border-radius: 12px;
-        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
         transition: transform 0.2s ease-in-out;
         font-size: 16px;
         line-height: 1.5;
         text-align: left;
         word-wrap: break-word;
         animation: fadeIn 0.5s ease-in-out;
-        margin-top: 15px;  /* Adds space above each response */
-        margin-bottom: 15px; /* Adds space below each response */
+        margin-top: 15px;
+        margin-bottom: 15px;
     }
 
     /* User message style */
     .chat-message.user {
-        background-color: #e9f5ff;
+        background-color: rgba(233, 245, 255, 0.9);
         border-left: 5px solid #3b82f6;
         align-self: flex-end;
+        color: #222222 !important;
     }
 
     /* Assistant message style */
     .chat-message.assistant {
-        background-color: #f0f9ff;
+        background-color: rgba(240, 249, 255, 0.9);
         border-left: 5px solid #22c55e;
         align-self: flex-start;
+        color: #222222 !important;
     }
 
     /* Hover effect */
     .chat-message:hover {
         transform: translateY(-2px);
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     }
 
     /* Button hover effect */
@@ -83,6 +92,7 @@ st.markdown("""
     }
 </style>
 """, unsafe_allow_html=True)
+
 
 
 
