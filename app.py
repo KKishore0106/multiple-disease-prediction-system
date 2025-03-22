@@ -761,7 +761,7 @@ if prompt := st.chat_input("Ask me about your health or symptoms..."):
 # Sidebar with information
 with st.sidebar:
     # Medical AI Image
-    st.image("https://www.svgrepo.com/show/13664/stethoscope.svg", width=100")
+    st.image("https://www.svgrepo.com/show/13664/stethoscope.svg", width=100)
 
     # About AI Medical Assistant
     st.header("🤖 About AI Medical Assistant")
