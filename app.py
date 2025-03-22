@@ -8,16 +8,42 @@ import re
 st.set_page_config(page_title="Medical AI Chatbot", layout="wide")
 st.markdown("""
 <style>
-    /* Apply a full-page gradient background with better contrast */
+    /* Full-page gradient background */
     .stApp {
-        background: linear-gradient(to bottom right, #8EC5FC, #E0C3FC);
+        background: linear-gradient(to bottom right, #6a85b6, #bac8e0);
         font-family: 'Arial', sans-serif;
         color: #ffffff;
     }
 
-    /* Make text more readable */
+    /* Improve text readability */
     h1, h2, h3, h4, h5, h6, p, label, span {
         color: #ffffff !important;
+    }
+
+    /* Sidebar Styling */
+    .css-1d391kg {
+        background: #ffffff !important;
+        border-radius: 10px;
+        padding: 15px;
+        color: #333333 !important;
+    }
+
+    /* Sidebar text adjustments */
+    .css-1d391kg h2, .css-1d391kg h3, .css-1d391kg h4 {
+        color: #222222 !important;
+    }
+
+    /* Sidebar buttons */
+    .stButton>button {
+        background-color: #3b82f6 !important;
+        color: white !important;
+        border-radius: 8px;
+        transition: all 0.3s ease-in-out;
+    }
+
+    .stButton>button:hover {
+        transform: scale(1.05);
+        background-color: #2563eb !important;
     }
 
     /* Chat container */
@@ -25,11 +51,11 @@ st.markdown("""
         display: flex;
         flex-direction: column;
         align-items: flex-start;
-        gap: 20px; /* Adds space between messages */
+        gap: 15px;
         padding: 10px;
     }
 
-    /* Chat messages */
+    /* Chat message bubbles */
     .chat-message {
         max-width: 75%;
         padding: 15px;
@@ -41,19 +67,19 @@ st.markdown("""
         text-align: left;
         word-wrap: break-word;
         animation: fadeIn 0.5s ease-in-out;
-        margin-top: 15px;
-        margin-bottom: 15px;
+        margin-top: 10px;
+        margin-bottom: 10px;
     }
 
-    /* User message style */
+    /* User message */
     .chat-message.user {
-        background-color: rgba(233, 245, 255, 0.9);
+        background-color: rgba(255, 255, 255, 0.8);
         border-left: 5px solid #3b82f6;
         align-self: flex-end;
         color: #222222 !important;
     }
 
-    /* Assistant message style */
+    /* AI response message */
     .chat-message.assistant {
         background-color: rgba(240, 249, 255, 0.9);
         border-left: 5px solid #22c55e;
@@ -65,18 +91,6 @@ st.markdown("""
     .chat-message:hover {
         transform: translateY(-2px);
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    }
-
-    /* Button hover effect */
-    .stButton>button {
-        transition: all 0.3s ease-in-out;
-        border-radius: 8px;
-    }
-
-    .stButton>button:hover {
-        transform: scale(1.05);
-        background-color: #3b82f6 !important;
-        color: white !important;
     }
 
     /* Fade-in animation */
@@ -92,8 +106,6 @@ st.markdown("""
     }
 </style>
 """, unsafe_allow_html=True)
-
-
 
 
 # **2️⃣ Load ML Models (Optimized with Cache)**
