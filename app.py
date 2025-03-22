@@ -5,7 +5,6 @@ import requests
 import re
 
 # **1️⃣ Set up page configuration**
-st.set_page_config(page_title="Medical AI Chatbot", layout="wide")
 st.markdown("""
 <style>
     /* Full page background */
