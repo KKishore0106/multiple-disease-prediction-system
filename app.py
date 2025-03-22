@@ -92,7 +92,7 @@ st.markdown("""
     left: 50%;
     transform: translateX(-50%);
     width: 80%; /* Adjust width */
-    max-width: 800px;
+    max-width: 1500px;
     background-color: white;
     border-radius: 20px;
     padding: 10px;
@@ -156,7 +156,7 @@ breast_cancer_model = load_model('breast_cancer.pkl')
 
 # **3️⃣ Hugging Face API Setup (Cached)**
 HF_API_TOKEN = "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"
-MODEL_NAME = "meta-llama/Llama-3.3-70B-Instruct"
+MODEL_NAME = "mistralai/Mistral-7B-Instruct-v0.3"
 headers = {"Authorization": f"Bearer {HF_API_TOKEN}"}
 
 # Modify the chat_with_mistral function to handle different types of responses
@@ -738,5 +738,3 @@ with st.sidebar:
     if st.button("🔄 Reset Conversation", help="Click to clear chat history"):
         st.session_state["messages"] = []  # Clear chat history
         st.rerun()  # Refresh Streamlit UI
-
-
