@@ -19,7 +19,7 @@ def load_model(filename):
 
 diabetes_model = load_model('diabetes.pkl')
 heart_disease_model = load_model('heart.pkl')
-parkinsons_model = load_model('parkinsons_model.sav')
+parkinsons_model = load_model('parkinsons_model.pkl')
 
 # **3️⃣ Hugging Face API Setup (Cached)**
 HF_API_TOKEN = "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"
