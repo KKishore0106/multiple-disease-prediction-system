@@ -466,8 +466,8 @@ if prompt:
         
         # Process final prediction if user confirms
             # Improved check for when user wants to get prediction after seeing summary
-        elif st.session_state.current_field_index >= len(st.session_state.field_keys) and any(x in prompt.lower() for x in ["yes", "yeah", "sure", "okay", "ok", "yep", "y"]):
-               disease = st.session_state.disease_name
+                elif st.session_state.current_field_index >= len(st.session_state.field_keys) and any(x in prompt.lower() for x in ["yes", "yeah", "sure", "okay", "ok", "yep", "y"]):
+                        disease = st.session_state.disease_name
     
     # Make sure we have all required fields
     if len(st.session_state.input_values) == len(disease_fields[disease]):
