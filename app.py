@@ -66,7 +66,7 @@ st.markdown("""
         font-size: 16px;
         text-align: left;
         word-wrap: break-word;
-        margin: 20px 0;
+        margin: 15px 0;
     }
 
     /* User messages */
