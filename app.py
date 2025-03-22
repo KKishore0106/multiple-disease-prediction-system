@@ -30,17 +30,25 @@ st.markdown("""
     /* Centered Title */
     .main-title {
         text-align: center;
-        font-size: 28px;
+        font-size: 30px;
         font-weight: bold;
         margin-top: 10px;
         color: #333;
+    }
+
+    /* Subtitle (Health Advice Text) */
+    .subtitle {
+        text-align: center;
+        font-size: 16px;
+        color: #555;
+        margin-bottom: 20px;
     }
 
     /* Chat area with padding */
     .block-container {
         background: white;
         border-radius: 12px;
-        padding: 30px 60px; /* Adds space from the sidebar */
+        padding: 30px 50px; /* Adjusted padding */
     }
 
     /* Chat container */
@@ -48,19 +56,20 @@ st.markdown("""
         display: flex;
         flex-direction: column;
         align-items: flex-start;
-        gap: 12px;
+        gap: 10px;
         padding: 10px;
     }
 
     /* Chat bubbles */
     .chat-message {
-        max-width: 75%;
+        max-width: 70%;
         padding: 14px;
         border-radius: 12px;
         font-size: 16px;
         text-align: left;
         word-wrap: break-word;
         margin: 6px 0;
+        box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.05);
     }
 
     /* User message (Light Blue) */
@@ -69,23 +78,28 @@ st.markdown("""
         color: #1e3a8a;
         border-left: 5px solid #3b82f6;
         align-self: flex-end;
+        border-radius: 16px;
+        padding: 14px;
     }
 
-    /* AI response (Light Gray) */
+    /* AI response (Light Gray with Green Border) */
     .chat-message.assistant {
         background-color: #f3f4f6;
         color: black;
         border-left: 5px solid #22c55e;
         align-self: flex-start;
+        border-radius: 16px;
+        padding: 14px;
     }
 
-    /* Chat input box */
+    /* Input Box */
     .stTextInput>div>div>input {
         background-color: #fff;
         border: 1px solid #ccc;
         border-radius: 8px;
         padding: 12px;
         width: 100%;
+        box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.05);
     }
 
     /* Floating send button */
@@ -109,6 +123,11 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+# Display Centered Title
+st.markdown('<h1 class="main-title">Medical AI Assistant</h1>', unsafe_allow_html=True)
+
+# Subtitle for health advice
+st.markdown('<p class="subtitle">Chat with our AI to check for diseases or get health advice</p>', unsafe_allow_html=True)
 # Display Centered Title
 st.markdown('<h1 class="main-title">Medical AI Assistant</h1>', unsafe_allow_html=True)
 # **2️⃣ Load ML Models (Optimized with Cache)**
