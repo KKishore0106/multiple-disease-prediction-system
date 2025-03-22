@@ -7,42 +7,64 @@ import re
 # **1️⃣ Set up page configuration**
 st.markdown("""
 <style>
-    /* Full page background */
+        /* Full page background */
     .stApp {
         background: white;
         font-family: 'Inter', sans-serif;
     }
 
     /* Sidebar (Black with Smooth Fade) */
-    .css-1d391kg {
+    .stSidebar {
         background: linear-gradient(to bottom, #000, #333);
         color: white;
         border-right: 2px solid #444;
         padding: 20px;
     }
-      /* Padding only for title and subtitle */
-        .title-container {
-            padding-top: 100px; /* Adjust this value to move it further down */
-            text-align: center;
+
+    /* Title & Subtitle Padding */
+    .title-container {
+        padding-top: 100px; /* Adjust this value to move it further down */
+        text-align: center;
     }
 
     /* Centralized Content */
     .block-container {
         background: white;
         border-radius: 12px;
-        padding: 10px 30px; /* Reduced padding */
-        max-width: 700px;
+        padding: 20px 40px; /* Adjusted padding */
+        max-width: 800px; /* Increased max width */
         margin: auto;
+        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
     }
 
-     <style>
-        /* Widen the chat input box */
-        .stTextInput>div>div>input {
-            width: 100% !important; /* Make it full width */
-            max-width: 800px; /* Adjust the width as needed */
-            margin: auto; /* Center it */
-            padding: 12px; /* Improve spacing */
-        }
+    /* Widen the chat input box */
+    .stTextInput>div>div>input {
+        width: 100% !important; /* Make it full width */
+        max-width: 900px; /* Increased width */
+        margin: auto; /* Center it */
+        padding: 14px; /* Improve spacing */
+        border-radius: 10px;
+        border: 1px solid #ccc;
+        box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Floating send button */
+    .stButton>button.send-button {
+        background-color: #3b82f6 !important;
+        color: white !important;
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        position: absolute;
+        right: 20px;
+        bottom: 20px;
+        transition: all 0.2s ease-in-out;
+    }
+
+    .stButton>button.send-button:hover {
+        background-color: #2563eb !important;
+        transform: scale(1.1);
+    }
 
 </style>
 <div class="title-container">
