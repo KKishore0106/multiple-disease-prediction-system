@@ -127,8 +127,6 @@ st.markdown('<h1 class="main-title">Medical AI Assistant</h1>', unsafe_allow_htm
 
 # Subtitle for health advice
 st.markdown('<p class="subtitle">Chat with our AI to check for diseases or get health advice</p>', unsafe_allow_html=True)
-# Display Centered Title
-st.markdown('<h1 class="main-title">Medical AI Assistant</h1>', unsafe_allow_html=True)
 # **2️⃣ Load ML Models (Optimized with Cache)**
 @st.cache_resource
 def load_model(filename):
