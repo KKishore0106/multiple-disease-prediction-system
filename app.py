@@ -530,29 +530,23 @@ if "modifying_field" not in st.session_state:
     st.session_state.modifying_field = None
 
 # **🔟 UI Setup**
-# Page header with custom styling
-st.markdown("""
-    <div style="text-align: center; padding: 20px;">
-        <h1 style="color: #3366ff;">Medical AI Assistant</h1>
-        <p style="font-size: 1.2em;">Get disease predictions and health advice</p>
-    </div>
-""", unsafe_allow_html=True)
+# Page header
+st.title("Medical AI Assistant")
+st.write("Chat with our AI to check for diseases or get health advice")
 
-# Create two columns for layout
-col1, col2 = st.columns([2, 1])
+# Create a container for chat history
+chat_container = st.container()
 
-with col1:
-    # Chat container
-    st.markdown("### Chat with Medical AI")
-    
-    # Display chat messages from history on app rerun
+# Display chat messages from history on app rerun
+with chat_container:
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
-    
-    # React to user input
-    if prompt := st.chat_input("Ask me about your health or symptoms..."):
-        # Display user message in chat message container
+
+# Accept user input
+if prompt := st.chat_input("Ask me about your health or symptoms..."):
+    # Display user message in chat message container
+    with chat_container:
         with st.chat_message("user"):
             st.markdown(prompt)
         
@@ -569,9 +563,9 @@ with col1:
         # Add assistant response to chat history
         st.session_state.messages.append({"role": "assistant", "content": response})
 
-with col2:
-    # Information sidebar
-    st.markdown("### Available Tests")
+# Sidebar with information
+with st.sidebar:
+    st.header("Available Disease Tests")
     
     # Create expandable sections for each disease
     for disease, fields in disease_fields.items():
@@ -586,13 +580,9 @@ with col2:
                 st.write(f"- {symptom}")
     
     # Disclaimer
-    st.markdown("""
-    <div style="background-color: #f8f9fa; padding: 10px; border-radius: 5px; margin-top: 20px;">
-        <p style="font-size: 0.8em; color: #6c757d;">
-            <strong>Disclaimer:</strong> This AI assistant provides information for educational purposes only. 
-            It is not a substitute for professional medical advice, diagnosis, or treatment. 
-            Always seek the advice of your physician or other qualified health provider.
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
-
+    st.markdown("---")
+    st.caption("""
+    **Disclaimer:** This AI assistant provides information for educational purposes only. 
+    It is not a substitute for professional medical advice, diagnosis, or treatment. 
+    Always seek the advice of your physician or other qualified health provider.
+    """)
