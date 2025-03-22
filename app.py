@@ -8,101 +8,82 @@ import re
 st.set_page_config(page_title="Medical AI Chatbot", layout="wide")
 st.markdown("""
 <style>
-    /* Full-page gradient background */
+    /* Full-page clean background (light grayish tone like ChatGPT) */
     .stApp {
-        background: linear-gradient(to bottom right, #6a85b6, #bac8e0);
+        background: #f0f2f6;
         font-family: 'Arial', sans-serif;
-        color: #ffffff;
-    }
-
-    /* Improve text readability */
-    h1, h2, h3, h4, h5, h6, p, label, span {
-        color: #ffffff !important;
+        color: #333333;
     }
 
     /* Sidebar Styling */
     .css-1d391kg {
         background: #ffffff !important;
-        border-radius: 10px;
-        padding: 15px;
-        color: #333333 !important;
+        border-right: 1px solid #ddd !important;
+        padding: 20px;
+        color: #222 !important;
     }
 
-    /* Sidebar text adjustments */
-    .css-1d391kg h2, .css-1d391kg h3, .css-1d391kg h4 {
-        color: #222222 !important;
+    /* Sidebar headers & text */
+    .css-1d391kg h2, .css-1d391kg h3, .css-1d391kg h4, .css-1d391kg p {
+        color: #222 !important;
     }
 
-    /* Sidebar buttons */
-    .stButton>button {
-        background-color: #3b82f6 !important;
-        color: white !important;
-        border-radius: 8px;
-        transition: all 0.3s ease-in-out;
-    }
-
-    .stButton>button:hover {
-        transform: scale(1.05);
-        background-color: #2563eb !important;
-    }
-
-    /* Chat container */
+    /* Chat container (simple spacing) */
     .chat-container {
         display: flex;
         flex-direction: column;
         align-items: flex-start;
-        gap: 15px;
+        gap: 10px;
         padding: 10px;
     }
 
     /* Chat message bubbles */
     .chat-message {
         max-width: 75%;
-        padding: 15px;
-        border-radius: 12px;
-        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
-        transition: transform 0.2s ease-in-out;
+        padding: 12px;
+        border-radius: 10px;
         font-size: 16px;
-        line-height: 1.5;
+        line-height: 1.4;
         text-align: left;
         word-wrap: break-word;
-        animation: fadeIn 0.5s ease-in-out;
-        margin-top: 10px;
-        margin-bottom: 10px;
+        margin: 5px 0;
     }
 
-    /* User message */
+    /* User message (light blue, like ChatGPT) */
     .chat-message.user {
-        background-color: rgba(255, 255, 255, 0.8);
-        border-left: 5px solid #3b82f6;
+        background-color: #e3efff;
+        border-left: 4px solid #3b82f6;
         align-self: flex-end;
-        color: #222222 !important;
+        color: #000;
     }
 
-    /* AI response message */
+    /* AI response (light gray, like ChatGPT) */
     .chat-message.assistant {
-        background-color: rgba(240, 249, 255, 0.9);
-        border-left: 5px solid #22c55e;
+        background-color: #f7f7f8;
+        border-left: 4px solid #22c55e;
         align-self: flex-start;
-        color: #222222 !important;
+        color: #000;
     }
 
-    /* Hover effect */
-    .chat-message:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    /* Chat input box */
+    .stTextInput>div>div>input {
+        background-color: #fff;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        padding: 10px;
     }
 
-    /* Fade-in animation */
-    @keyframes fadeIn {
-        from {
-            opacity: 0;
-            transform: translateY(10px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
+    /* Button styling */
+    .stButton>button {
+        background-color: #3b82f6 !important;
+        color: white !important;
+        border-radius: 8px;
+        transition: all 0.2s ease-in-out;
+    }
+
+    .stButton>button:hover {
+        background-color: #2563eb !important;
+        transform: scale(1.05);
     }
 </style>
 """, unsafe_allow_html=True)
