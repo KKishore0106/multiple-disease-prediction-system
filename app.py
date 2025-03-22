@@ -20,17 +20,16 @@ st.markdown("""
         border-right: 2px solid #444;
         padding: 20px;
     }
-     /* Centered Title */
+     /* Move Title and Subtitle Down */
     .main-title {
         text-align: center;
         font-size: 28px;
         font-weight: bold;
-        margin-top: 40px; /* Increased top margin to push it downward */
+        margin-top: 120px; /* Increased to move it down */
         margin-bottom: 5px;
         color: #333;
     }
 
-    /* Subtitle (Health Advice Text) */
     .subtitle {
         text-align: center;
         font-size: 15px;
