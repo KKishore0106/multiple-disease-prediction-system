@@ -112,8 +112,8 @@ st.markdown("""
         width: 45px;
         height: 45px;
         position: absolute;
-        right: 10px;
-        bottom: 10px;
+        right: 5px;
+        bottom: 5px;
         transition: all 0.2s ease-in-out;
         display: flex;
         align-items: center;
