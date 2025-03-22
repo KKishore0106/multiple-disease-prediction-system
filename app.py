@@ -45,7 +45,7 @@ st.markdown("""
         background: white;
         border-radius: 25px;
         padding: 15px 80px;
-        max-width: 1500px; /* Prevents over-expansion */
+        max-width: 1200px; /* Prevents over-expansion */
         margin: left;
     }
 
