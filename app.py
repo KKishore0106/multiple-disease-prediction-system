@@ -660,38 +660,37 @@ if prompt := st.chat_input("Ask me about your health or symptoms..."):
         st.session_state.messages.append({"role": "assistant", "content": response})
 
 # Sidebar with information
-import streamlit as st
-
-# Sidebar Content
 with st.sidebar:
-    # Medical AI Themed Image
+    # Medical AI Image
     st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/AI_healthcare_icon.png/800px-AI_healthcare_icon.png", use_container_width=True)
+
     # About AI Medical Assistant
     st.header("🤖 About AI Medical Assistant")
     st.markdown("""
-    This AI assistant helps assess health risks for **Diabetes, Heart Disease, and Parkinson’s**.
-    - Uses **machine learning** to provide risk assessments
-    - Suggests **health recommendations** based on symptoms
-    - Can find **nearby hospitals** if needed
+    This AI-powered chatbot offers:
+    
+    - **Health Assessment**: Evaluate your risk for 6 different health conditions  
+    - **Symptom Analysis**: Discuss your symptoms for possible insights  
+    - **Health Advice**: Get general health recommendations based on your concerns  
     """)
 
-    st.header("📌 How to Use")
-    st.markdown("""
-    1️⃣ **Ask health questions** - Type any health-related query  
-    2️⃣ **Check disease risk** - Say: "Check my risk for diabetes"  
-    3️⃣ **Describe symptoms** - List any symptoms you’re experiencing  
-    4️⃣ **Get suggestions** - AI provides personalized health tips  
-    """)
+    st.divider()
 
-    st.divider()  # Adds a visual separator
-
-    # Expandable Disease Information (Only Names)
+    # Available Disease Tests
     st.header("🩺 Available Disease Tests")
-    diseases = ["Heart Disease", "Diabetes", "Parkinson’s"]
 
-    for disease in diseases:
-        with st.expander(f"🩹 {disease}"):
-            pass  # No additional info, just shows the disease name
+    diseases = {
+        "Heart Disease": "❤️",
+        "Diabetes": "🩸",
+        "Parkinson’s": "🧠",
+        "Liver Disease": "🫀",
+        "Kidney Disease": "🚰",
+        "Breast Cancer": "🎗️"
+    }
+
+    for disease, emoji in diseases.items():
+        with st.expander(f"{emoji} {disease}", expanded=True):  # Expands by default so names are visible
+            st.write("")  # Keeps the expander open
 
     st.divider()
 
