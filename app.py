@@ -90,9 +90,10 @@ st.markdown("""
         background-color: #fff;
         border: 1px solid #ccc;
         border-radius: 10px;
-        padding: 5px 15px;
-        width: 100%;
-        max-width: 1500px;
+        padding: 20px;
+        width: 90%;
+        max-width: 1000px;
+        position: relative
         transition: all 0.3s ease-in-out;
     }
 
