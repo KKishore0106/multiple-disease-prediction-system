@@ -55,7 +55,7 @@ st.markdown("""
         flex-direction: row;
         align-items: flex-start;
         gap: 10px;
-        padding: 10px;
+        padding: 5px;
     }
 
     /* Chat messages */
