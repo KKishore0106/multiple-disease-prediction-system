@@ -15,7 +15,7 @@ st.markdown("""
 
     /* Sidebar  */
     .stSidebar {
-        background: #2A2A2A;
+        background: #f0f2f6;
         color: white;
         border-right:2px solid #444;
         padding: 20px;
