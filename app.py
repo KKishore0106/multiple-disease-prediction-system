@@ -14,12 +14,12 @@ st.markdown("""
         font-family: 'Arial', sans-serif;
     }
 
-    /* Styling chat messages */
+    /* Container for chat messages */
     .chat-container {
         display: flex;
         flex-direction: column;
         align-items: flex-start;
-        gap: 10px;
+        gap: 20px; /* Adds space between messages */
         padding: 10px;
     }
 
@@ -34,6 +34,8 @@ st.markdown("""
         text-align: left;
         word-wrap: break-word;
         animation: fadeIn 0.5s ease-in-out;
+        margin-top: 15px;  /* Adds space above each response */
+        margin-bottom: 15px; /* Adds space below each response */
     }
 
     /* User message style */
@@ -81,6 +83,7 @@ st.markdown("""
     }
 </style>
 """, unsafe_allow_html=True)
+
 
 
 # **2️⃣ Load ML Models (Optimized with Cache)**
