@@ -382,8 +382,7 @@ def handle_general_state(prompt):
     elif is_greeting(prompt):
         return "Hello! 👋 How are you feeling today? I'm your AI medical assistant. I can help answer health questions, check for diabetes, heart disease, Parkinson's, liver disease, kidney disease, or breast cancer, or discuss symptoms you might be experiencing."
     
-    # For general health questions
-else:
+    
     # Detect if it's a very short casual message
     if len(prompt.split()) < 3:
         return chat_with_mistral(prompt, response_type="casual")
