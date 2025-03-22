@@ -241,6 +241,58 @@ def analyze_symptoms(user_input):
     else:
         return None, None
 
+# After all inputs have been collected, display a summary and ask for confirmation
+def handle_completed_inputs(disease, input_values):
+    """Display a summary of all collected inputs and ask for confirmation"""
+    response = "✅ I've collected all the necessary information for your " + disease + " prediction.\n\n"
+    response += "Here's a summary of what you provided:\n\n"
+    
+    # Format each input value with proper labeling
+    for field, value in input_values.items():
+        field_info = disease_fields[disease][field]
+        unit = f" {field_info['unit']}" if field_info['unit'] else ""
+        response += f"- **{field}**: {value}{unit}\n"
+    
+    response += "\nAre all these details correct? (yes/no)"
+    
+    # Update conversation state to confirming data
+    st.session_state.conversation_state = "confirming_data"
+    return response
+
+# Handle user confirmation of collected data
+def handle_data_confirmation(prompt):
+    """Process user's confirmation of the collected data"""
+    if any(x in prompt.lower() for x in ["yes", "yeah", "sure", "okay", "ok", "yep", "y", "correct"]):
+        st.session_state.conversation_state = "ready_for_prediction"
+        return "Thank you for confirming. Shall we proceed with the prediction now? (yes/no)"
+    else:
+        # User indicates data is not correct
+        fields_list = ", ".join(list(st.session_state.input_values.keys()))
+        return f"Which value would you like to modify? Please specify one of these fields: {fields_list}"
+
+# Handle user's decision to proceed with prediction
+def handle_prediction_confirmation(prompt):
+    """Process user's decision to proceed with prediction"""
+    if any(x in prompt.lower() for x in ["yes", "yeah", "sure", "okay", "ok", "yep", "y", "proceed"]):
+        # Generate the prediction
+        disease = st.session_state.disease_name
+        prediction_result = get_prediction(disease, st.session_state.input_values)
+        
+        # Add contextual information based on the prediction
+        if "Positive" in prediction_result:
+            medical_advice = chat_with_mistral(f"Provide concise, helpful general information and lifestyle advice for someone who has tested positive for {disease}. Do not claim to diagnose the person and remind them to consult a healthcare professional.")
+            response = f"{prediction_result}\n\n{medical_advice}\n\nPlease note: This is not a medical diagnosis. Always consult with a healthcare professional for proper evaluation and treatment."
+        else:
+            response = f"{prediction_result}\n\nEven with a negative result, please consult with a healthcare professional for comprehensive evaluation. Would you like information about preventive measures for {disease}?"
+        
+        # Reset to general conversation state
+        st.session_state.conversation_state = "general"
+        return response
+    else:
+        # User doesn't want to proceed with prediction
+        st.session_state.conversation_state = "general"
+        return "No problem. Is there anything else I can help you with regarding your health?"
+
 # **7️⃣ Input Handlers for Different Conversation States**
 def handle_general_state(prompt):
     """Handle user input when in general conversation state"""
@@ -363,16 +415,25 @@ def handle_collecting_field_input(prompt):
                 response = f"Great! Now, please enter your {next_field} ({field_info['description']}). "
                 response += f"Typical range: {field_info['range']} {field_info['unit']}"
             else:
-                # We have all values, show summary and confirm
-                response = "Thanks for providing all the information. Here's a summary of what you entered:\n\n"
-                for field, value in st.session_state.input_values.items():
-                    response += f"- {field}: {value}\n"
-                response += "\nIs all this information correct? (yes/no)"
-                st.session_state.conversation_state = "confirming_data"
+                # All fields collected - now use handle_completed_inputs for a cleaner summary
+                return handle_completed_inputs(disease, st.session_state.input_values)
             
             return response
     except ValueError:
         return f"I didn't understand that. Please enter a numeric value for {current_field}."
+
+def handle_specific_field(prompt):
+    """Handle when a user specifies a field to modify"""
+    disease = st.session_state.disease_name
+    fields = disease_fields[disease]
+    
+    for field in st.session_state.field_keys:
+        if field.lower() in prompt.lower():
+            st.session_state.modifying_field = field
+            field_info = fields[field]
+            return f"Sure, let's update your {field} value. Please enter a new value for {field} ({field_info['description']}). Typical range: {field_info['range']} {field_info['unit']}"
+    
+    return "I couldn't identify which field you want to modify. Please specify one of: " + ", ".join(st.session_state.field_keys)
 
 def handle_out_of_range_confirmation(prompt):
     """Handle user confirmation for out-of-range values"""
@@ -399,11 +460,8 @@ def handle_out_of_range_confirmation(prompt):
                 response = f"Noted. Now, please enter your {next_field} ({field_info['description']}). "
                 response += f"Typical range: {field_info['range']} {field_info['unit']}"
             else:
-                response = "Thanks for providing all the information. Here's a summary of what you entered:\n\n"
-                for field, value in st.session_state.input_values.items():
-                    response += f"- {field}: {value}\n"
-                response += "\nIs all this information correct? (yes/no)"
-                st.session_state.conversation_state = "confirming_data"
+                # All fields collected - use handle_completed_inputs
+                return handle_completed_inputs(disease, st.session_state.input_values)
             
             return response
         except:
@@ -414,249 +472,127 @@ def handle_out_of_range_confirmation(prompt):
     else:
         return f"I didn't understand that. Please confirm with 'yes' or 'no'."
 
-def handle_data_confirmation(prompt):
-    """Handle user confirmation of all entered data"""
-    if any(x in prompt.lower() for x in ["yes", "yeah", "sure", "okay", "ok", "yep", "y"]):
-        return "Would you like to get your prediction now? (yes/no)"
-    else:
-        # User indicates data is not correct
-        return f"Which value would you like to modify? Please specify one of: {', '.join(list(st.session_state.input_values.keys()))}"
-
-def handle_final_prediction(prompt):
-    """Handle generating the final prediction"""
-    disease = st.session_state.disease_name
-    
-    # Make sure we have all required fields
-    if len(st.session_state.input_values) == len(disease_fields[disease]):
-        prediction_result = get_prediction(disease, st.session_state.input_values)
-        
-        # Get advice based on prediction
-        if "Positive" in prediction_result:
-            medical_advice = chat_with_mistral(f"Provide concise, helpful general information and lifestyle advice for someone who has tested positive for {disease}. Do not claim to diagnose the person and remind them to consult a healthcare professional.")
-            response = f"{prediction_result}\n\n{medical_advice}\n\nPlease note: This is not a medical diagnosis. Always consult with a healthcare professional for proper evaluation and treatment."
-        else:
-            response = f"{prediction_result}\n\nPlease note: This is not a medical diagnosis. Always consult with a healthcare professional for proper evaluation and treatment."
-    
-        # Reset to general conversation state
-        st.session_state.conversation_state = "general"
-        return response
-    else:
-        # If missing fields, let's collect them
-        missing_fields = [field for field in disease_fields[disease].keys() if field not in st.session_state.input_values]
-        return f"We still need some information before making a prediction. Let's collect data for {missing_fields[0]} next."
-
-def handle_collecting_inputs_state(prompt):
-    """Handle user input when collecting medical data inputs"""
-    disease = st.session_state.disease_name
-    fields = disease_fields[disease]
-    
-    # Make sure field_keys is properly initialized
-    if not hasattr(st.session_state, 'field_keys') or st.session_state.field_keys is None:
-        st.session_state.field_keys = list(fields.keys())
-    
-    # Debug print
-    print(f"Current state: {st.session_state.conversation_state}")
-    print(f"Current field index: {st.session_state.current_field_index}")
-    print(f"Total fields: {len(st.session_state.field_keys)}")
-    print(f"User prompt: {prompt}")
-    
-    # Check if user wants to modify a previous value
-    modify_patterns = ["change", "modify", "edit", "update", "fix", "correct", "redo"]
-    if any(pattern in prompt.lower() for pattern in modify_patterns) and st.session_state.current_field_index > 0:
-        # Try to identify which field they want to change
-        for field in st.session_state.field_keys:
-            if field.lower() in prompt.lower() or any(word in prompt.lower() for word in field.lower().split()):
-                st.session_state.modifying_field = field
-                field_info = fields[field]
-                return f"Sure, let's update your {field} value. Please enter a new value for {field} ({field_info['description']}). Typical range: {field_info['range']} {field_info['unit']}"
-        
-        # If no specific field identified
-        return f"Which value would you like to change? Please specify one of: {', '.join(list(st.session_state.input_values.keys()))}"
-    
-    # If we're in modify mode, handle the new value
-    elif st.session_state.modifying_field is not None:
-        return handle_modifying_
-def handle_modifying_field(prompt):
-    """Handle user input when modifying a previously entered field"""
-    disease = st.session_state.disease_name
-    fields = disease_fields[disease]
-    field = st.session_state.modifying_field
-    field_info = fields[field]
-    
-    try:
-        float_value = float(prompt)  # Validate the input is a number
-        
-        # Check if value is within expected range
-        range_min, range_max = map(float, field_info['range'].split('-'))
-        if float_value < range_min or float_value > range_max:
-            return f"⚠️ The value you entered ({float_value}) is outside the typical range ({field_info['range']}). Are you sure this is correct? (yes/no)"
-        else:
-            st.session_state.input_values[field] = float_value
-            st.session_state.modifying_field = None
-            
-            # Confirm the change and show current progress
-            response = f"✅ Updated {field} to {float_value}.\n\nHere's what we have so far:\n"
-            for f, v in st.session_state.input_values.items():
-                response += f"- {f}: {v}\n"
-            
-            if st.session_state.current_field_index < len(st.session_state.field_keys):
-                current_field = st.session_state.field_keys[st.session_state.current_field_index]
-                field_info = fields[current_field]
-                response += f"\nPlease enter your {current_field} ({field_info['description']}). "
-                response += f"Typical range: {field_info['range']} {field_info['unit']}"
-            else:
-                response += "\nIs all this information correct? (yes/no)"
-                st.session_state.conversation_state = "confirming_data"
-            
-            return response
-    except ValueError:
-        return f"⚠️ Please enter a valid number for {st.session_state.modifying_field}."
-
-def handle_specific_field(prompt):
-    """Handle when a user specifies a field to modify"""
-    disease = st.session_state.disease_name
-    fields = disease_fields[disease]
-    
-    for field in st.session_state.field_keys:
-        if field.lower() in prompt.lower():
-            st.session_state.modifying_field = field
-            field_info = fields[field]
-            return f"Sure, let's update your {field} value. Please enter a new value for {field} ({field_info['description']}). Typical range: {field_info['range']} {field_info['unit']}"
-    
-    return "I couldn't identify which field you want to modify. Please specify one of: " + ", ".join(st.session_state.field_keys)
-
 def is_greeting(text):
     """Check if text contains a greeting"""
     greetings = ["hello", "hi", "hey", "greetings", "good morning", "good afternoon", "good evening", "howdy"]
     return any(greeting in text.lower() for greeting in greetings)
 
-# **9️⃣ Main UI Setup**
-def main():
-    # Create columns for header layout
-    header_col1, header_col2 = st.columns([1, 2])
+# **8️⃣ Main Processing Logic**
+def process_user_input(prompt):
+    """Main function to process user input based on conversation state"""
+    if st.session_state.conversation_state == "general":
+        return handle_general_state(prompt)
+    elif st.session_state.conversation_state == "suggesting_disease":
+        return handle_suggesting_disease_state(prompt)
     
-    with header_col1:
-        st.image("https://img.icons8.com/color/96/000000/caduceus.png", width=80)
+    elif st.session_state.conversation_state == "collecting_inputs":
+        if any(field.lower() in prompt.lower() for field in st.session_state.field_keys):
+            # User wants to modify a specific field
+            return handle_specific_field(prompt)
+        elif st.session_state.modifying_field is not None:
+            # User is entering a new value for a specific field
+            return handle_modifying_field(prompt)
+        else:
+            # User is entering a value for the current field
+            return handle_collecting_field_input(prompt)
     
-    with header_col2:
-        st.title("Medical AI Assistant")
-        st.markdown("💬 Chat with the AI to discuss symptoms or check for various diseases")
+    elif st.session_state.conversation_state == "confirming_data":
+        return handle_data_confirmation(prompt)
     
-    # Display application info
-    with st.expander("ℹ️ About this application"):
-        st.markdown("""
-        This medical AI assistant helps you:
-        
-        1. **Chat about health concerns** - Ask questions about symptoms or health topics
-        2. **Check for specific diseases** - Assess risk for diabetes, heart disease, Parkinson's, liver disease, kidney disease, and breast cancer
-        3. **Get general health advice** - Learn about preventive care and wellness
-        
-        **DISCLAIMER:** This tool is for informational purposes only. It does not provide medical advice, diagnosis, or treatment. Always consult with qualified healthcare providers for medical concerns.
-        """)
+    elif st.session_state.conversation_state == "ready_for_prediction":
+        return handle_prediction_confirmation(prompt)
     
-    # Initialize chat session
+    # Catch any unexpected states
+    else:
+        st.session_state.conversation_state = "general"
+        return "Let's start over. How can I help with your health concerns today?"
+
+# **9️⃣ Initialize Session State for Chat History**
 if "messages" not in st.session_state:
     st.session_state.messages = []
+
+if "conversation_state" not in st.session_state:
     st.session_state.conversation_state = "general"
+
+if "disease_name" not in st.session_state:
     st.session_state.disease_name = None
-    st.session_state.current_field_index = 0
+
+if "input_values" not in st.session_state:
     st.session_state.input_values = {}
-    st.session_state.field_keys = None
+
+if "field_keys" not in st.session_state:
+    st.session_state.field_keys = []
+
+if "current_field_index" not in st.session_state:
+    st.session_state.current_field_index = 0
+
+if "modifying_field" not in st.session_state:
     st.session_state.modifying_field = None
-    # Display chat messages from history
+
+# **🔟 UI Setup**
+# Page header with custom styling
+st.markdown("""
+    <div style="text-align: center; padding: 20px;">
+        <h1 style="color: #3366ff;">Medical AI Assistant</h1>
+        <p style="font-size: 1.2em;">Get disease predictions and health advice</p>
+    </div>
+""", unsafe_allow_html=True)
+
+# Create two columns for layout
+col1, col2 = st.columns([2, 1])
+
+with col1:
+    # Chat container
+    st.markdown("### Chat with Medical AI")
+    
+    # Display chat messages from history on app rerun
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
     
-    # Display a welcome message if no messages exist
-    if not st.session_state.messages:
-        with st.chat_message("assistant"):
-            welcome_message = """
-            👋 Hello! I'm your medical AI assistant. How can I help you today?
-            
-            I can:
-            - Discuss symptoms you're experiencing
-            - Check for diseases like diabetes, heart disease, and more
-            - Answer general health questions
-            
-            Just type your question or concern below to get started!
-            """
-            st.markdown(welcome_message)
-            # Add the welcome message to history
-            st.session_state.messages.append({"role": "assistant", "content": welcome_message})
-    
-    # Chat input
-    if prompt := st.chat_input("Type your message here..."):
-        # Display user message in chat
+    # React to user input
+    if prompt := st.chat_input("Ask me about your health or symptoms..."):
+        # Display user message in chat message container
         with st.chat_message("user"):
             st.markdown(prompt)
+        
         # Add user message to chat history
         st.session_state.messages.append({"role": "user", "content": prompt})
-        # Debug info
-    print(f"Current state: {st.session_state.conversation_state}")
-    print(f"User prompt: {prompt}")
-    
-    # Process message based on current conversation state
-    with st.chat_message("assistant"):
-        with st.spinner("Thinking..."):
-            if st.session_state.conversation_state == "general":
-                response = handle_general_state(prompt)
-            elif st.session_state.conversation_state == "suggesting_disease":
-                response = handle_suggesting_disease_state(prompt)
-            elif st.session_state.conversation_state == "collecting_inputs":
-                # Check if we're handling a previously-entered field
-                if st.session_state.modifying_field is not None:
-                    response = handle_modifying_field(prompt)
-                # Check if user asked to change a specific value
-                elif any(pattern in prompt.lower() for pattern in ["change", "modify", "update"]):
-                    response = handle_specific_field(prompt)
-                # Check if we're confirming an out-of-range value
-                elif any(x in prompt.lower() for x in ["yes", "no"]) and st.session_state.current_field_index < len(st.session_state.field_keys):
-                    response = handle_out_of_range_confirmation(prompt)
-                # Otherwise collect the next input
-                else:
-                    response = handle_collecting_field_input(prompt)
-            elif st.session_state.conversation_state == "confirming_data":
-                if any(x in prompt.lower() for x in ["yes", "yeah", "sure", "okay", "yep", "y"]):
-                    st.session_state.conversation_state = "predicting"
-                    response = handle_final_prediction("yes")
-                else:
-                    response = handle_specific_field(prompt)
-            elif st.session_state.conversation_state == "predicting":
-                response = handle_final_prediction(prompt)
-            else:
-                response = "I'm sorry, I seem to have lost track of our conversation. Let's start over. How can I help you today?"
-                st.session_state.conversation_state = "general"
-            
-            # Show response
+        
+        # Process user input and get response
+        response = process_user_input(prompt)
+        
+        # Display assistant response in chat message container
+        with st.chat_message("assistant"):
             st.markdown(response)
         
-        # Automatically scroll to bottom
-        st.rerun()
+        # Add assistant response to chat history
+        st.session_state.messages.append({"role": "assistant", "content": response})
 
-# **1️0️⃣ Sidebar for Reference Information**
-def sidebar():
-    st.sidebar.title("Health Reference")
+with col2:
+    # Information sidebar
+    st.markdown("### Available Tests")
     
-    # Add disease information in expandable sections
+    # Create expandable sections for each disease
     for disease, fields in disease_fields.items():
-        with st.sidebar.expander(f"About {disease}"):
-            st.write(f"### {disease} Risk Factors")
-            
+        with st.expander(f"{disease} Test"):
+            st.write(f"**Required measurements:**")
             for field, info in fields.items():
-                st.write(f"**{field}**: {info['description']}")
-                st.write(f"Normal range: {info['range']} {info['unit']}")
+                st.write(f"- {field}: {info['description']}")
             
-            st.write("### Common Symptoms")
-            for symptom in disease_symptoms[disease]:
-                st.write(f"- {symptom.capitalize()}")
+            # Add common symptoms
+            st.write("**Common symptoms:**")
+            for symptom in disease_symptoms[disease][:5]:  # Show top 5 symptoms
+                st.write(f"- {symptom}")
     
-
-    st.header("Debug Info")
-    if st.button("Show conversation state"):
-        st.write(f"State: {st.session_state.conversation_state}")
-        st.write(f"Disease: {st.session_state.disease_name}")
-        st.write(f"Field index: {st.session_state.current_field_index}")
-        st.write(f"Inputs: {st.session_state.input_values}")
-
+    # Disclaimer
+    st.markdown("""
+    <div style="background-color: #f8f9fa; padding: 10px; border-radius: 5px; margin-top: 20px;">
+        <p style="font-size: 0.8em; color: #6c757d;">
+            <strong>Disclaimer:</strong> This AI assistant provides information for educational purposes only. 
+            It is not a substitute for professional medical advice, diagnosis, or treatment. 
+            Always seek the advice of your physician or other qualified health provider.
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
 
