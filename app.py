@@ -155,43 +155,45 @@ kidney_model = load_model('kidney.pkl')
 breast_cancer_model = load_model('breast_cancer.pkl')
 
 # **3️⃣ Hugging Face API Setup (Cached)**
+import requests
+import streamlit as st
+
 HF_API_TOKEN = "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"
 MODEL_NAME = "mistralai/Mistral-7B-Instruct-v0.3"
 headers = {"Authorization": f"Bearer {HF_API_TOKEN}"}
 
-# Modify the chat_with_mistral function to handle different types of responses
 @st.cache_data
 def chat_with_mistral(prompt, response_type="medical"):
     """Calls Hugging Face API with contextual prompting based on response_type"""
     try:
-        # Add specific context based on the type of response needed
         if response_type == "medical":
             system_prompt = "You are a helpful medical AI assistant. Provide accurate health information without making diagnoses. Be concise but thorough."
-        
         else:
             system_prompt = "You are a helpful AI assistant."
-        
-        # Create a proper instruction prompt for Mistral
-        formatted_prompt = f"""<s>[INST] {system_prompt}
 
-User message: {prompt} [/INST]</s>"""
-        
+        formatted_prompt = f"<s>[INST] {system_prompt}\n\nUser message: {prompt} [/INST]</s>"
+
         response = requests.post(
             f"https://api-inference.huggingface.co/models/{MODEL_NAME}",
             headers=headers,
             json={"inputs": formatted_prompt, "parameters": {"max_new_tokens": 500}}
         )
+
+        # Check if request was successful
+        if response.status_code != 200:
+            return f"⚠️ API Error: {response.status_code} - {response.text}"
+
         data = response.json()
-        
-        # Clean up the response to extract just the answer
-        if isinstance(data, list):
+
+        # Ensure we have the expected response format
+        if isinstance(data, list) and 'generated_text' in data[0]:
             text = data[0]['generated_text']
-            # Extract everything after the last [/INST] tag
             if "[/INST]" in text:
                 text = text.split("[/INST]")[-1].strip()
             return text
         else:
-            return "⚠️ AI response error."
+            return f"⚠️ Unexpected API Response: {data}"
+
     except Exception as e:
         return f"⚠️ AI Error: {str(e)}"
 # **4️⃣ Disease Fields with Descriptions and Normal Ranges**
