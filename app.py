@@ -3,6 +3,10 @@ import numpy as np
 import pickle
 import requests
 import re
+import json
+from geopy.geocoders import Nominatim
+import folium
+from streamlit_folium import folium_static
 
 # **1️⃣ Set up page configuration**
 st.markdown("""
@@ -74,7 +78,7 @@ st.markdown("""
         background-color: #dbeafe;
         color: #1e3a8a;
         border-left: 5px solid #3b82f6;
-        align-self: flex-end;
+        align-self: flex-start;
     }
 
     /* AI responses */
@@ -85,20 +89,20 @@ st.markdown("""
         align-self: flex-start;
     }
 
-    /* Chat input box */
-    .stTextInput>div {
-    position: fixed;
-    bottom: 20px; /* Adjust as needed */
-    left: 50%;
-    transform: translateX(-50%);
-    width: 80%; /* Adjust width */
-    max-width: 1500px;
-    background-color: white;
-    border-radius: 20px;
-    padding: 10px;
-    z-index: 9999;
-    }
-
+    /* Floating Chat Input Box */
+        div[data-testid="stTextInput"] {
+            position: fixed;
+            bottom: 50px;
+            left: 58%;
+            transform: translateX(-50%);
+            width: 80%;
+            max-width: 800px;
+            background-color: white;
+            border-radius: 30px;
+            padding: 10px;
+            z-index: 9999;
+            
+            }
     /* Chat input hover and focus effects */
     .stTextInput>div>div>input:hover,
     .stTextInput>div>div>input:focus {
@@ -128,14 +132,20 @@ st.markdown("""
         background-color: #2563eb !important;
         transform: scale(1.1);
     }
+
+    /* Map container */
+    .leaflet-container {
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin-top: 20px;
+    }
 </style>
 
 <div class="title-container">
     <h1 style="color: #333;">Medical AI Assistant</h1>
-    <p style="color: #555; font-size: 16px;">Chat with our AI to check for diseases or get health advice</p>
+    <p style="color: #555; font-size: 16px;">Chat with our AI to check for diseases, get health advice, and find healthcare facilities</p>
 </div>
 """, unsafe_allow_html=True)
-
 
 # **2️⃣ Load ML Models (Optimized with Cache)**
 @st.cache_resource
@@ -154,23 +164,115 @@ liver_model = load_model('liver.pkl')
 kidney_model = load_model('kidney.pkl')
 breast_cancer_model = load_model('breast_cancer.pkl')
 
-# **3️⃣ Hugging Face API Setup (Cached)**
-import requests
-import streamlit as st
-
-HF_API_TOKEN = "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"
+# **3️⃣ Hugging Face API Setup with Enhanced Intent Recognition**
+HF_API_TOKEN = "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"
 MODEL_NAME = "mistralai/Mistral-7B-Instruct-v0.3"
 headers = {"Authorization": f"Bearer {HF_API_TOKEN}"}
 
+# Define intent categories and their keywords
+INTENT_CATEGORIES = {
+    "greeting": ["hello", "hi", "hey", "greetings", "good morning", "good afternoon", "good evening"],
+    "medical_check": ["test", "check", "examine", "diagnose", "screen", "symptoms", "signs", "feeling", "pain", "discomfort", "not well"],
+    "disease_inquiry": ["diabetes", "heart disease", "parkinsons", "liver", "kidney", "breast cancer", "cancer"],
+    "hospital_search": ["hospital", "clinic", "doctor", "medical center", "healthcare", "facility", "where can i", "nearby"],
+    "confirmation": ["yes", "yeah", "sure", "ok", "okay", "correct", "right", "confirm"],
+    "denial": ["no", "nope", "not", "don't", "do not", "incorrect", "wrong"],
+    "lifestyle": ["diet", "exercise", "nutrition", "sleep", "stress", "healthy", "habits", "routine"],
+    "medication": ["medicine", "drug", "pill", "prescription", "treatment", "therapy"],
+    "follow_up": ["next", "then", "what now", "after", "results", "outcome"],
+    "farewell": ["bye", "goodbye", "see you", "thanks", "thank you"],
+    "general_question": []  # Default category
+}
+
 @st.cache_data
-def chat_with_mistral(prompt, response_type="medical"):
+def detect_intent(user_message):
+    """Detects the user's intent from their message"""
+    user_message = user_message.lower()
+    
+    # Check for disease name mentions first
+    for disease in disease_symptoms.keys():
+        if disease.lower() in user_message:
+            return "disease_inquiry", disease
+    
+    # Check for symptom mentions
+    symptoms_response, suggested_disease = analyze_symptoms(user_message)
+    if symptoms_response and suggested_disease:
+        return "medical_check", suggested_disease
+    
+    # Check for hospital search
+    location_info = find_hospitals_from_input(user_message)
+    if location_info[0]:  # If location was found
+        return "hospital_search", location_info
+    
+        # Check for intent keywords
+    for intent, keywords in INTENT_CATEGORIES.items():
+        for keyword in keywords:
+            if keyword in user_message:
+                return intent, None
+    
+    # Default to general question if no specific intent is found
+    return "general_question", None
+
+@st.cache_data
+def chat_with_mistral(prompt, response_type="medical", context=None):
     """Calls Hugging Face API with contextual prompting based on response_type"""
     try:
-        if response_type == "medical":
-            system_prompt = "You are a helpful medical AI assistant. Provide accurate health information without making diagnoses. Be concise but thorough."
+        # Detect intent first
+        intent, intent_data = detect_intent(prompt)
+        
+        # Choose the appropriate system prompt based on intent
+        if intent == "medical_check":
+            system_prompt = """
+            You are a helpful medical AI assistant. The user appears to be describing medical symptoms.
+            Analyze these symptoms carefully, but do NOT provide a definitive diagnosis.
+            Instead:
+            1. Acknowledge the symptoms described
+            2. Ask clarifying questions if needed
+            3. Provide information about possible conditions associated with these symptoms
+            4. ALWAYS emphasize the importance of consulting a healthcare professional
+            5. If appropriate, suggest relevant tests that might be useful
+            """
+        elif intent == "disease_inquiry":
+            system_prompt = f"""
+            You are a helpful medical AI assistant. The user is asking about {intent_data if intent_data else 'a medical condition'}.
+            Provide clear, factual information about this condition including:
+            1. Brief overview of the condition
+            2. Common symptoms
+            3. Risk factors
+            4. When to seek medical attention
+            """
+        elif intent == "hospital_search":
+            system_prompt = """
+            You are a helpful medical AI assistant. The user is looking for medical facilities.
+            Help them by:
+            1. Asking for their location if not provided
+            2. Explaining what information you can provide about healthcare facilities
+            3. Being clear about the importance of emergency services for urgent situations
+            """
+        elif intent == "lifestyle":
+            system_prompt = """
+            You are a helpful medical AI assistant. The user is asking about lifestyle recommendations.
+            Provide evidence-based advice on:
+            1. Diet and nutrition
+            2. Physical activity
+            3. Sleep hygiene
+            4. Stress management
+            Format your response in clear, actionable bullet points.
+            """
         else:
-            system_prompt = "You are a helpful AI assistant."
-
+            system_prompt = """
+            You are a helpful medical AI assistant. Your role is to:
+            1. Provide clear, accurate health information based on medical evidence
+            2. Never diagnose conditions or prescribe treatments
+            3. Always recommend consulting healthcare professionals for personal medical advice
+            4. Be empathetic and supportive while maintaining appropriate medical boundaries
+            5. Focus on evidence-based information and avoid speculation
+            """
+        
+        # Add context if available
+        if context:
+            system_prompt += f"\n\nAdditional context: {context}"
+            
         formatted_prompt = f"<s>[INST] {system_prompt}\n\nUser message: {prompt} [/INST]</s>"
 
         response = requests.post(
@@ -196,6 +298,147 @@ def chat_with_mistral(prompt, response_type="medical"):
 
     except Exception as e:
         return f"⚠️ AI Error: {str(e)}"
+
+# Function to get Mistral's interpretation of prediction results
+def get_mistral_interpretation(disease, prediction_result, input_values):
+    """Get Mistral's interpretation of the prediction results"""
+    is_positive = "Positive" in prediction_result
+    result_status = "positive" if is_positive else "negative"
+    
+    inputs_str = ", ".join([f"{k}: {v}" for k, v in input_values.items()])
+    prompt = f"""
+    Based on the following medical test values for {disease}, the prediction is {result_status}:
+    {inputs_str}
+    
+    Please analyze these values and provide:
+    1. An explanation of which values are concerning and why (if the prediction is positive)
+    2. What these results might suggest about the patient's health
+    3. Lifestyle or next steps recommendations based on these results
+    4. Important monitoring or follow-up considerations
+    
+    Remember, this is not a diagnosis, but an analysis of test values.
+    """
+    
+    interpretation = chat_with_mistral(prompt, "medical_analysis", f"Prediction: {result_status} for {disease}")
+    return interpretation
+
+# **3.1️⃣ Hospital Finder Functions**
+def get_user_location(location_name):
+    """Get latitude and longitude from a location name"""
+    try:
+        geolocator = Nominatim(user_agent="medical_assistant")
+        location = geolocator.geocode(location_name)
+        if location:
+            return location.latitude, location.longitude
+        return None
+    except Exception as e:
+        return None
+
+def find_nearby_hospitals(latitude, longitude, radius=5000, disease_type=None):
+    """Find nearby hospitals using simulated data with disease specialization"""
+    
+    try:
+        # Simulated hospital data based on the given coordinates
+        location_hash = hash(f"{latitude},{longitude}") % 1000
+        
+        # Base hospitals
+        hospitals = [
+            {
+                "name": f"City General Hospital #{location_hash}",
+                "vicinity": f"{int(location_hash/10)} Main Street",
+                "rating": 4.5,
+                "specialties": ["General Medicine", "Emergency Care", "Surgery"],
+                "geometry": {"location": {"lat": latitude + 0.01, "lng": longitude + 0.01}}
+            },
+            {
+                "name": f"Central Medical Center #{location_hash + 1}",
+                "vicinity": f"{int(location_hash/5)} Oak Avenue",
+                "rating": 4.2,
+                "specialties": ["Cardiology", "Neurology", "Orthopedics"],
+                "geometry": {"location": {"lat": latitude - 0.01, "lng": longitude - 0.01}}
+            },
+            {
+                "name": f"St. Mary's Hospital #{location_hash + 2}",
+                "vicinity": f"{int(location_hash/3)} Elm Street",
+                "rating": 4.7,
+                "specialties": ["Oncology", "Diabetes Care", "Renal Medicine"],
+                "geometry": {"location": {"lat": latitude + 0.02, "lng": longitude - 0.02}}
+            }
+        ]
+        
+        # If a disease type is specified, add specialty hospitals and sort by relevance
+        if disease_type:
+            disease_map = {
+                "Diabetes": ["Diabetes Care", "Endocrinology"],
+                "Heart Disease": ["Cardiology", "Cardiovascular Surgery"],
+                "Parkinson's": ["Neurology", "Movement Disorders"],
+                "Liver Disease": ["Hepatology", "Gastroenterology"],
+                "Kidney Disease": ["Nephrology", "Renal Medicine"],
+                "Breast Cancer": ["Oncology", "Breast Cancer Center"]
+            }
+            
+            specialties = disease_map.get(disease_type, [])
+            
+            # Add a specialty hospital for this disease
+            if specialties:
+                specialty_hospital = {
+                    "name": f"{specialties[0]} Specialty Center #{location_hash + 3}",
+                    "vicinity": f"{int(location_hash/2)} Specialist Boulevard",
+                    "rating": 4.9,
+                    "specialties": specialties,
+                                        "geometry": {"location": {"lat": latitude - 0.015, "lng": longitude + 0.015}}
+                }
+                hospitals.append(specialty_hospital)
+                
+                # Sort hospitals by relevance to the disease
+                def relevance_score(hospital):
+                    hospital_specialties = hospital.get("specialties", [])
+                    return sum(1 for s in specialties if s in hospital_specialties) * 2 + hospital.get("rating", 0)
+                
+                hospitals.sort(key=relevance_score, reverse=True)
+        
+        return hospitals
+    except Exception as e:
+        return []
+
+def create_hospital_map(latitude, longitude, hospitals):
+    """Create a map with hospital markers"""
+    m = folium.Map(location=[latitude, longitude], zoom_start=13)
+    
+    # Add user location marker
+    folium.Marker(
+        [latitude, longitude],
+        popup="Your Location",
+        icon=folium.Icon(color="blue", icon="user", prefix="fa"),
+    ).add_to(m)
+    
+    # Add hospital markers
+    for hospital in hospitals:
+        hospital_lat = hospital["geometry"]["location"]["lat"]
+        hospital_lng = hospital["geometry"]["location"]["lng"]
+        
+        # Create popup with specialties if available
+        specialties_html = ""
+        if "specialties" in hospital:
+            specialties_html = "<p><strong>Specialties:</strong> " + ", ".join(hospital["specialties"]) + "</p>"
+            
+        popup_html = f"""
+        <div style="width:200px;">
+            <h4>{hospital['name']}</h4>
+            <p>{hospital['vicinity']}</p>
+            <p>Rating: {hospital.get('rating', 'N/A')}/5</p>
+            {specialties_html}
+        </div>
+        """
+        
+        folium.Marker(
+            [hospital_lat, hospital_lng],
+            popup=folium.Popup(popup_html, max_width=300),
+            icon=folium.Icon(color="red", icon="plus", prefix="fa"),
+        ).add_to(m)
+    
+    return m
+
 # **4️⃣ Disease Fields with Descriptions and Normal Ranges**
 disease_fields = {
     "Diabetes": {
@@ -213,7 +456,7 @@ disease_fields = {
         "Sex": {"description": "Sex (0 = female, 1 = male)", "range": "0-1", "unit": ""},
         "Chest Pain Type": {"description": "Chest pain type (0-3)", "range": "0-3", "unit": ""},
         "Resting Blood Pressure": {"description": "Resting blood pressure", "range": "90-200", "unit": "mm Hg"},
-        "Serum Cholesterol": {"description": "Serum cholesterol", "range": "100-600", "unit": "mg/dl"},
+                "Serum Cholesterol": {"description": "Serum cholesterol", "range": "100-600", "unit": "mg/dl"},
         "Fasting Blood Sugar": {"description": "Fasting blood sugar > 120 mg/dl (1 = true, 0 = false)", "range": "0-1", "unit": ""},
         "Resting ECG Result": {"description": "Resting electrocardiographic results (0-2)", "range": "0-2", "unit": ""},
         "Max Heart Rate": {"description": "Maximum heart rate achieved", "range": "60-220", "unit": "bpm"},
@@ -242,7 +485,7 @@ disease_fields = {
         "Alkaline Phosphotase": {"description": "Alkaline phosphotase level", "range": "20-300", "unit": "IU/L"},
         "SGPT": {"description": "Serum glutamic pyruvic transaminase level", "range": "1-300", "unit": "IU/L"},
         "SGOT": {"description": "Serum glutamic oxaloacetic transaminase level", "range": "1-300", "unit": "IU/L"},
-        "Total Proteins": {"description": "Total proteins level", "range": "5.5-9", "unit": "g/dL"},
+                "Total Proteins": {"description": "Total proteins level", "range": "5.5-9", "unit": "g/dL"},
         "Albumin": {"description": "Albumin level", "range": "2.5-5.5", "unit": "g/dL"},
         "Albumin/Globulin Ratio": {"description": "Ratio of albumin to globulin", "range": "0.3-2.5", "unit": ""}
     },
@@ -272,7 +515,7 @@ disease_fields = {
         "Compactness Mean": {"description": "Mean of perimeter^2 / area - 1.0", "range": "0.02-0.35", "unit": ""},
         "Concavity Mean": {"description": "Mean of severity of concave portions of the contour", "range": "0-0.43", "unit": ""},
         "Concave Points Mean": {"description": "Mean number of concave portions of the contour", "range": "0-0.2", "unit": ""},
-        "Symmetry Mean": {"description": "Mean symmetry", "range": "0.1-0.3", "unit": ""},
+                "Symmetry Mean": {"description": "Mean symmetry", "range": "0.1-0.3", "unit": ""},
         "Fractal Dimension Mean": {"description": "Mean 'coastline approximation' - 1", "range": "0.05-0.1", "unit": ""}
     }
 }
@@ -316,43 +559,47 @@ disease_symptoms = {
     ]
 }
 
-# **5️⃣ Predict Function**
+# **5️⃣ Improved Prediction Function**
 def get_prediction(disease, input_values):
     try:
         # Convert input values to a NumPy array
         input_data = np.array(list(map(float, input_values.values()))).reshape(1, -1)
         
         # Determine which model to use
-        if disease == "Diabetes" and diabetes_model:
-            prediction = diabetes_model.predict(input_data)[0]
-        elif disease == "Heart Disease" and heart_disease_model: 
-            prediction = heart_disease_model.predict(input_data)[0]
-        elif disease == "Parkinson's" and parkinsons_model:
-            prediction = parkinsons_model.predict(input_data)[0]
-        elif disease == "Liver Disease" and liver_model:
-            prediction = liver_model.predict(input_data)[0]
-        elif disease == "Kidney Disease" and kidney_model:
-            prediction = kidney_model.predict(input_data)[0]
-        elif disease == "Breast Cancer" and breast_cancer_model:
-            prediction = breast_cancer_model.predict(input_data)[0]
-        else:
-            return "⚠️ Model not available."
+        models = {
+            "Diabetes": diabetes_model,
+            "Heart Disease": heart_disease_model,
+            "Parkinson's": parkinsons_model,
+            "Liver Disease": liver_model,
+            "Kidney Disease": kidney_model,
+            "Breast Cancer": breast_cancer_model
+        }
+        
+        model = models.get(disease)
+        
+        if not model:
+            return "⚠️ Model not available for this disease."
+        
+        # Get prediction
+        prediction = model.predict(input_data)[0]
         
         # Return binary prediction (0 = negative, 1 = positive)
         result = "Positive" if prediction == 1 else "Negative"
         result_text = f"Based on your inputs, the prediction for {disease} is: **{result}**"
         
+        # Store result in session state for future reference
+        st.session_state.prediction_result = result
+        st.session_state.prediction_disease = disease
+        st.session_state.prediction_inputs = input_values
+        
         return result_text
     
     except ValueError:
         return "⚠️ Invalid input detected. Please enter numeric values only."
-    except IndexError:
-        # Add specific handling for the indexing error
-        return "⚠️ Prediction format error. Check model output format."
     except Exception as e:
         return f"⚠️ Unexpected error: {str(e)}"
 
-# **6️⃣ Symptom Analyzer Function**
+# **6️⃣ Enhanced Symptom Analyzer**
 def analyze_symptoms(user_input):
     user_input = user_input.lower()
     
@@ -382,363 +629,404 @@ def analyze_symptoms(user_input):
     else:
         return None, None
 
-# After all inputs have been collected, display a summary and ask for confirmation
+# **6.1️⃣ Improved Hospital Finder Function**
+def find_hospitals_from_input(user_input):
+    """Extract location from user input and find hospitals"""
+    disease_mentioned = None
+    for disease in disease_symptoms.keys():
+        if disease.lower() in user_input.lower():
+            disease_mentioned = disease
+            break
+            
+    location_keywords = ["near me", "nearby", "close to", "in", "around", "hospitals in", "doctors in", "clinics in"]
+    has_location_keywords = any(keyword in user_input.lower() for keyword in location_keywords)
+    
+    location_patterns = [
+        r"find (?:hospitals|doctors|clinics) (?:in|near|around) ([\w\s,]+)",
+        r"hospitals (?:in|near|around) ([\w\s,]+)",
+        r"medical (?:facilities|centers|care) (?:in|near|around) ([\w\s,]+)",
+        r"(?:recommend|suggest) (?:hospitals|doctors|clinics) (?:in|near|around) ([\w\s,]+)"
+    ]
+    
+    extracted_location = None
+    
+    if has_location_keywords:
+        for pattern in location_patterns:
+            match = re.search(pattern, user_input, re.IGNORECASE)
+            if match:
+                extracted_location = match.group(1).strip()
+                break
+    
+    if has_location_keywords and not extracted_location:
+        for keyword in location_keywords:
+            if keyword in user_input.lower():
+                parts = user_input.lower().split(keyword)
+                if len(parts) > 1 and parts[1].strip():
+                    extracted_location = parts[1].strip()
+                    extracted_location = re.sub(r'[?!.,;:]$', '', extracted_location).strip()
+                    break
+    
+    if extracted_location:
+        coordinates = get_user_location(extracted_location)
+        if coordinates:
+            latitude, longitude = coordinates
+            hospitals = find_nearby_hospitals(latitude, longitude, disease_type=disease_mentioned)
+            return extracted_location, coordinates, hospitals
+    
+    return None, None, None
+
+# **7️⃣ Improved User Input Handling Functions**
 def handle_completed_inputs(disease, input_values):
-    """Display a summary of all collected inputs and ask for confirmation"""
+    """Display a summary of all collected information and ask for confirmation"""
     response = "✅ I've collected all the necessary information for your " + disease + " prediction.\n\n"
     response += "Here's a summary of what you provided:\n\n"
     
-    # Format each input value with proper labeling
     for field, value in input_values.items():
         field_info = disease_fields[disease][field]
         unit = f" {field_info['unit']}" if field_info['unit'] else ""
         response += f"- **{field}**: {value}{unit}\n"
     
-    response += "\nAre all these details correct? (yes/no)"
-    
-    # Update conversation state to confirming data
-    st.session_state.conversation_state = "confirming_data"
+    response += "\nWould you like to proceed with the prediction? (yes/no)"
     return response
 
-# Handle user confirmation of collected data
-def handle_data_confirmation(prompt):
-    """Process user's confirmation of the collected data"""
-    if any(x in prompt.lower() for x in ["yes", "yeah", "sure", "okay", "ok", "yep", "y", "correct"]):
-        st.session_state.conversation_state = "ready_for_prediction"
-        return "Thank you for confirming. Shall we proceed with the prediction now? (yes/no)"
-    else:
-        # User indicates data is not correct
-        fields_list = ", ".join(list(st.session_state.input_values.keys()))
-        return f"Which value would you like to modify? Please specify one of these fields: {fields_list}"
+def handle_test_selection(disease):
+    """Generate a response for the selected disease test"""
+    fields = list(disease_fields[disease].keys())
+    
+    response = f"You've selected to check for {disease}. I'll need some medical information from you.\n\n"
+    response += f"Please provide your {fields[0]}:"
+    
+    # Store the disease and remaining fields in session state
+    st.session_state.current_disease = disease
+    st.session_state.remaining_fields = fields[1:]
+    st.session_state.collected_inputs = {}
+    
+    return response
 
-# Handle user's decision to proceed with prediction
-def handle_prediction_confirmation(prompt):
-    """Process user's decision to proceed with prediction"""
-    if any(x in prompt.lower() for x in ["yes", "yeah", "sure", "okay", "ok", "yep", "y", "proceed"]):
-        # Generate the prediction
-        disease = st.session_state.disease_name
-        prediction_result = get_prediction(disease, st.session_state.input_values)
+def handle_field_input(user_input, disease, current_field):
+    """Process user input for a specific medical field"""
+    try:
+        # Try to parse the input as a number
+        value = float(user_input.strip())
         
-        # Add contextual information based on the prediction
-        if "Positive" in prediction_result:
-            medical_advice = chat_with_mistral(f"Provide concise, helpful general information and lifestyle advice for someone who has tested positive for {disease}. Do not claim to diagnose the person and remind them to consult a healthcare professional.")
-            response = f"{prediction_result}\n\n{medical_advice}\n\nPlease note: This is not a medical diagnosis. Always consult with a healthcare professional for proper evaluation and treatment."
-        else:
-            response = f"{prediction_result}\n\nEven with a negative result, please consult with a healthcare professional for comprehensive evaluation. Would you like information about preventive measures for {disease}?"
+        # Get the expected range for this field
+        field_info = disease_fields[disease][current_field]
+        range_str = field_info["range"]
         
-        # Reset to general conversation state
-        st.session_state.conversation_state = "general"
-        return response
-    else:
-        # User doesn't want to proceed with prediction
-        st.session_state.conversation_state = "general"
-        return "No problem. Is there anything else I can help you with regarding your health?"
-
-# **7️⃣ Input Handlers for Different Conversation States**
-def handle_general_state(prompt):
-    """Handle user input when in general conversation state"""
-    # Check for disease testing requests
-    if any(x in prompt.lower() for x in ["check", "test", "assess", "diagnose"]) and any(disease.lower() in prompt.lower() for disease in disease_fields.keys()):
-        for disease in disease_fields.keys():
-            if disease.lower() in prompt.lower():
-                st.session_state.disease_name = disease
-                st.session_state.input_values = {}
-                st.session_state.field_keys = list(disease_fields[disease].keys())
-                st.session_state.current_field_index = 0
-                current_field = st.session_state.field_keys[0]
-                field_info = disease_fields[disease][current_field]
-                
-                response = f"I'll help you check for {disease}. I'll need to collect some medical information.\n\n"
-                response += f"First, please enter your {current_field} ({field_info['description']}). "
-                response += f"Typical range: {field_info['range']} {field_info['unit']}"
-                
-                st.session_state.conversation_state = "collecting_inputs"
+        # Parse the range
+        if "-" in range_str:
+            min_val, max_val = map(float, range_str.split("-"))
+            
+            # Check if value is outside the normal range
+            if value < min_val or value > max_val:
+                response = f"⚠️ Your {current_field} value ({value}) is outside the normal range ({range_str}). "
+                response += "Are you sure this value is correct? (yes/no)"
+                st.session_state.confirming_abnormal_value = True
+                st.session_state.temp_value = value
                 return response
-    
-    # Check for symptoms
-    elif "symptom" in prompt.lower() or any(symptom in prompt.lower() for disease_symptoms_list in disease_symptoms.values() for symptom in disease_symptoms_list):
-        symptom_response, suggested_disease = analyze_symptoms(prompt)
-        if symptom_response:
-            if suggested_disease:
-                st.session_state.disease_name = suggested_disease
-                st.session_state.conversation_state = "suggesting_disease"
-            return symptom_response
-        else:
-            # If no clear symptoms found, use Mistral
-            return chat_with_mistral(f"The user said: '{prompt}'. Respond as a medical AI assistant but avoid making specific diagnoses. Instead, focus on general health information and asking clarifying questions. If they described symptoms, acknowledge them but suggest consulting a healthcare provider for proper diagnosis.")
-    def is_greeting(text):
-         """Check if text contains a greeting"""
-         greetings = ["hello", "hi", "hey", "greetings", "good morning", "good afternoon", "good evening", "howdy"]
-         return any(greeting in text.lower() for greeting in greetings)
-
-# Main response function
-    if is_greeting(prompt):
-         return "Hello! 👋 How are you feeling today? I'm your AI medical assistant. I can help answer health questions, check for diabetes, heart disease, Parkinson's, liver disease, kidney disease, or breast cancer, or discuss symptoms you might be experiencing."
-
-# Ensure all responses remain medical
-    return chat_with_mistral(prompt, response_type="medical")
-
-def handle_suggesting_disease_state(prompt):
-    """Handle user input when suggesting a disease to check"""
-    if any(x in prompt.lower() for x in ["yes", "yeah", "sure", "okay", "ok", "yep", "y"]):
-        st.session_state.input_values = {}
-        st.session_state.field_keys = list(disease_fields[st.session_state.disease_name].keys())
-        st.session_state.current_field_index = 0
-        current_field = st.session_state.field_keys[0]
-        field_info = disease_fields[st.session_state.disease_name][current_field]
         
-        response = f"Great! Let's check for {st.session_state.disease_name}. I'll need some medical information.\n\n"
-        response += f"First, please enter your {current_field} ({field_info['description']}). "
-        response += f"Typical range: {field_info['range']} {field_info['unit']}"
+        # Store the value and move to next field
+        st.session_state.collected_inputs[current_field] = value
         
-        st.session_state.conversation_state = "collecting_inputs"
-        return response
-    else:
-        st.session_state.conversation_state = "general"
-        return "No problem. Is there another disease you'd like to check (Diabetes, Heart Disease, Parkinson's, Liver Disease, Kidney Disease, or Breast Cancer), or do you have other health questions I can help with?"
-
-def handle_modifying_field(prompt):
-    """Handle user input when modifying a previously entered field"""
-    disease = st.session_state.disease_name
-    fields = disease_fields[disease]
-    field = st.session_state.modifying_field
-    field_info = fields[field]
-    
-    try:
-        float_value = float(prompt)  # Validate the input is a number
-        
-        # Check if value is within expected range
-        range_min, range_max = map(float, field_info['range'].split('-'))
-        if float_value < range_min or float_value > range_max:
-            return f"⚠️ The value you entered ({float_value}) is outside the typical range ({field_info['range']}). Are you sure this is correct? (yes/no)"
-        else:
-            st.session_state.input_values[field] = float_value
-            st.session_state.modifying_field = None
-            
-            # Confirm the change and show current progress
-            response = f"✅ Updated {field} to {float_value}.\n\nHere's what we have so far:\n"
-            for f, v in st.session_state.input_values.items():
-                response += f"- {f}: {v}\n"
-            
-            if st.session_state.current_field_index < len(st.session_state.field_keys):
-                current_field = st.session_state.field_keys[st.session_state.current_field_index]
-                field_info = fields[current_field]
-                response += f"\nPlease enter your {current_field} ({field_info['description']}). "
-                response += f"Typical range: {field_info['range']} {field_info['unit']}"
-            else:
-                response += "\nIs all this information correct? (yes/no)"
-                st.session_state.conversation_state = "confirming_data"
-            
+        # Check if there are more fields
+        if st.session_state.remaining_fields:
+            next_field = st.session_state.remaining_fields[0]
+            st.session_state.remaining_fields = st.session_state.remaining_fields[1:]
+            response = f"Thanks! Now, please provide your {next_field}:"
             return response
+        else:
+            # All fields are collected
+            st.session_state.awaiting_confirmation = True
+            return handle_completed_inputs(disease, st.session_state.collected_inputs)
+    
     except ValueError:
-        return f"⚠️ Please enter a valid number for {st.session_state.modifying_field}."
+        return f"⚠️ Please enter a valid number for {current_field}."
 
-def handle_collecting_field_input(prompt):
-    """Handle numeric input for the current field"""
-    disease = st.session_state.disease_name
-    fields = disease_fields[disease]
-    current_field = st.session_state.field_keys[st.session_state.current_field_index]
-    field_info = fields[current_field]
+def process_user_input(user_input):
+    """Process user input based on current conversation state"""
     
-    try:
-        float_value = float(prompt)  # Validate the input is a number
+    # Initialize session state variables if they don't exist
+    if 'conversation' not in st.session_state:
+        st.session_state.conversation = []
+    if 'current_disease' not in st.session_state:
+        st.session_state.current_disease = None
+    if 'remaining_fields' not in st.session_state:
+        st.session_state.remaining_fields = []
+    if 'collected_inputs' not in st.session_state:
+        st.session_state.collected_inputs = {}
+    if 'confirming_abnormal_value' not in st.session_state:
+        st.session_state.confirming_abnormal_value = False
+    if 'temp_value' not in st.session_state:
+        st.session_state.temp_value = None
+    if 'awaiting_confirmation' not in st.session_state:
+        st.session_state.awaiting_confirmation = False
+    if 'suggested_disease' not in st.session_state:
+        st.session_state.suggested_disease = None
+    if 'hospital_search_location' not in st.session_state:
+        st.session_state.hospital_search_location = None
+    if 'prediction_result' not in st.session_state:
+        st.session_state.prediction_result = None
+    if 'prediction_disease' not in st.session_state:
+        st.session_state.prediction_disease = None
+    if 'prediction_inputs' not in st.session_state:
+        st.session_state.prediction_inputs = {}
+    if 'asking_for_interpretation' not in st.session_state:
+        st.session_state.asking_for_interpretation = False
+    
+    # Add user message to conversation
+    st.session_state.conversation.append({"role": "user", "content": user_input})
+    
+    # Handle different conversation states
+    if st.session_state.confirming_abnormal_value:
+        # User is confirming an abnormal value
+        st.session_state.confirming_abnormal_value = False
         
-        # Check if value is within expected range
-        range_min, range_max = map(float, field_info['range'].split('-'))
-        if float_value < range_min or float_value > range_max:
-            return f"⚠️ The value you entered ({float_value}) is outside the typical range ({field_info['range']}). Are you sure this is correct? (yes/no)"
-        else:
-            # Store the value and move to next field
-            st.session_state.input_values[current_field] = float_value
-            st.session_state.current_field_index += 1
+        if any(word in user_input.lower() for word in ["yes", "yeah", "correct", "right", "sure", "ok", "okay"]):
+            current_field = list(disease_fields[st.session_state.current_disease].keys())[len(st.session_state.collected_inputs)]
+            st.session_state.collected_inputs[current_field] = st.session_state.temp_value
             
-            # Check if we have all fields or need more
-            if st.session_state.current_field_index < len(st.session_state.field_keys):
-                next_field = st.session_state.field_keys[st.session_state.current_field_index]
-                field_info = fields[next_field]
-                response = f"Great! Now, please enter your {next_field} ({field_info['description']}). "
-                response += f"Typical range: {field_info['range']} {field_info['unit']}"
+            # Check if there are more fields
+            if st.session_state.remaining_fields:
+                next_field = st.session_state.remaining_fields[0]
+                st.session_state.remaining_fields = st.session_state.remaining_fields[1:]
+                response = f"Noted. Now, please provide your {next_field}:"
             else:
-                # All fields collected - now use handle_completed_inputs for a cleaner summary
-                return handle_completed_inputs(disease, st.session_state.input_values)
-            
-            return response
-    except ValueError:
-        return f"I didn't understand that. Please enter a numeric value for {current_field}."
-
-def handle_specific_field(prompt):
-    """Handle when a user specifies a field to modify"""
-    disease = st.session_state.disease_name
-    fields = disease_fields[disease]
-    
-    for field in st.session_state.field_keys:
-        if field.lower() in prompt.lower():
-            st.session_state.modifying_field = field
-            field_info = fields[field]
-            return f"Sure, let's update your {field} value. Please enter a new value for {field} ({field_info['description']}). Typical range: {field_info['range']} {field_info['unit']}"
-    
-    return "I couldn't identify which field you want to modify. Please specify one of: " + ", ".join(st.session_state.field_keys)
-
-def handle_out_of_range_confirmation(prompt):
-    """Handle user confirmation for out-of-range values"""
-    disease = st.session_state.disease_name
-    fields = disease_fields[disease]
-    current_field = st.session_state.field_keys[st.session_state.current_field_index]
-    
-    if any(x in prompt.lower() for x in ["yes", "yeah", "sure", "okay", "ok", "yep", "y"]):
-        # Try to get the last value from message history
-        try:
-            # Find the latest message that might contain a numeric value
-            for i in range(len(st.session_state.messages) - 1, -1, -1):
-                message = st.session_state.messages[i]["content"]
-                numbers = re.findall(r"[-+]?\d*\.\d+|\d+", message)
-                if numbers:
-                    last_value = float(numbers[0])
-                    st.session_state.input_values[current_field] = last_value
-                    st.session_state.current_field_index += 1
-                    break
-            
-            if st.session_state.current_field_index < len(st.session_state.field_keys):
-                next_field = st.session_state.field_keys[st.session_state.current_field_index]
-                field_info = fields[next_field]
-                response = f"Noted. Now, please enter your {next_field} ({field_info['description']}). "
-                response += f"Typical range: {field_info['range']} {field_info['unit']}"
-            else:
-                # All fields collected - use handle_completed_inputs
-                return handle_completed_inputs(disease, st.session_state.input_values)
-            
-            return response
-        except:
-            return f"Let's try again. Please enter a numeric value for {current_field}."
-    elif any(x in prompt.lower() for x in ["no", "nope", "n"]):
-        field_info = fields[current_field]
-        return f"Let's try again. Please enter a new value for {current_field} ({field_info['description']}). Typical range: {field_info['range']} {field_info['unit']}"
-    else:
-        return f"I didn't understand that. Please confirm with 'yes' or 'no'."
-
-# **8️⃣ Main Processing Logic**
-def process_user_input(prompt):
-    """Main function to process user input based on conversation state"""
-    if st.session_state.conversation_state == "general":
-        return handle_general_state(prompt)
-    elif st.session_state.conversation_state == "suggesting_disease":
-        return handle_suggesting_disease_state(prompt)
-    
-    elif st.session_state.conversation_state == "collecting_inputs":
-        if any(field.lower() in prompt.lower() for field in st.session_state.field_keys):
-            # User wants to modify a specific field
-            return handle_specific_field(prompt)
-        elif st.session_state.modifying_field is not None:
-            # User is entering a new value for a specific field
-            return handle_modifying_field(prompt)
+                # All fields are collected
+                st.session_state.awaiting_confirmation = True
+                response = handle_completed_inputs(st.session_state.current_disease, st.session_state.collected_inputs)
         else:
-            # User is entering a value for the current field
-            return handle_collecting_field_input(prompt)
+            current_field = list(disease_fields[st.session_state.current_disease].keys())[len(st.session_state.collected_inputs)]
+            response = f"Let's try again. Please provide a valid value for your {current_field}:"
     
-    elif st.session_state.conversation_state == "confirming_data":
-        return handle_data_confirmation(prompt)
+    elif st.session_state.awaiting_confirmation:
+        # User is confirming to proceed with prediction
+        st.session_state.awaiting_confirmation = False
+        
+        if any(word in user_input.lower() for word in ["yes", "yeah", "correct", "right", "sure", "ok", "okay"]):
+            # Get prediction from model
+            prediction_result = get_prediction(st.session_state.current_disease, st.session_state.collected_inputs)
+            
+            # Get AI interpretation of the results
+            if "Positive" in prediction_result:
+                interpretation = get_mistral_interpretation(
+                    st.session_state.current_disease, 
+                    prediction_result, 
+                    st.session_state.collected_inputs
+                )
+                response = f"{prediction_result}\n\n{interpretation}"
+                response += "\n\n⚠️ **Important:** This is not a definitive diagnosis. Please consult with a healthcare professional for proper diagnosis and treatment."
+                response += "\n\nWould you like me to help you find nearby healthcare facilities specialized in this condition?"
+                st.session_state.asking_for_interpretation = False
+            else:
+                response = f"{prediction_result}\n\nThat's good news! Remember that this is just a screening tool. Regular check-ups with healthcare professionals are still important for your health."
+                response += "\n\nWould you like me to provide more information about preventing this condition or any other health concerns?"
+                st.session_state.asking_for_interpretation = True
+        else:
+            response = "I understand. The prediction has been canceled. Is there anything else I can help you with?"
+            
+            # Reset the current disease state
+            st.session_state.current_disease = None
+            st.session_state.remaining_fields = []
+            st.session_state.collected_inputs = {}
     
-    elif st.session_state.conversation_state == "ready_for_prediction":
-        return handle_prediction_confirmation(prompt)
+    elif st.session_state.asking_for_interpretation:
+        # User is asking for more information after prediction
+        st.session_state.asking_for_interpretation = False
+        
+        if any(word in user_input.lower() for word in ["yes", "yeah", "sure", "ok", "okay", "please", "information", "tell me"]):
+            if st.session_state.prediction_disease and st.session_state.prediction_result:
+                # Get disease prevention or management information
+                if st.session_state.prediction_result == "Negative":
+                    prompt = f"Tell me how to prevent {st.session_state.prediction_disease} and maintain good health"
+                else:
+                    prompt = f"Tell me how to manage {st.session_state.prediction_disease} after a positive screening result"
+                
+                response = chat_with_mistral(prompt, "disease_management")
+            else:
+                response = "I'd be happy to provide general health information. What specific health topic would you like to know more about?"
+        else:
+            response = "No problem. Is there anything else I can help you with today?"
     
-    # Catch any unexpected states
+    elif st.session_state.current_disease and st.session_state.remaining_fields:
+        # User is providing field values for disease prediction
+        current_field_index = len(disease_fields[st.session_state.current_disease].keys()) - len(st.session_state.remaining_fields) - 1
+        current_field = list(disease_fields[st.session_state.current_disease].keys())[current_field_index]
+        response = handle_field_input(user_input, st.session_state.current_disease, current_field)
+        
+        if "Would you like to proceed with the prediction?" in response:
+            st.session_state.awaiting_confirmation = True
+    
+    elif st.session_state.suggested_disease:
+        # User is responding to a disease suggestion based on symptoms
+        if any(word in user_input.lower() for word in ["yes", "yeah", "correct", "right", "sure", "ok", "okay"]):
+            response = handle_test_selection(st.session_state.suggested_disease)
+        else:
+            response = "I understand. What type of health information or service are you looking for today?"
+        
+        st.session_state.suggested_disease = None
+    
+    elif st.session_state.hospital_search_location:
+        # User provided or confirmed a location for hospital search
+        location, coordinates, hospitals = st.session_state.hospital_search_location
+        
+        if coordinates and hospitals:
+            disease_type = None
+            
+            # Check if searching for a disease-specific facility
+            if "Positive" in str(st.session_state.prediction_result) and st.session_state.prediction_disease:
+                disease_type = st.session_state.prediction_disease
+                response = f"I found these healthcare facilities near {location}, specializing in {disease_type}:\n\n"
+            else:
+                response = f"I found these healthcare facilities near {location}:\n\n"
+                
+            for i, hospital in enumerate(hospitals, 1):
+                response += f"{i}. **{hospital['name']}**\n"
+                response += f"   Address: {hospital['vicinity']}\n"
+                response += f"   Rating: {hospital.get('rating', 'N/A')}/5\n"
+                if "specialties" in hospital:
+                    response += f"   Specialties: {', '.join(hospital['specialties'])}\n"
+                response += "\n"
+            
+            # Create and display the map
+            latitude, longitude = coordinates
+            map_obj = create_hospital_map(latitude, longitude, hospitals)
+            st.session_state.display_map = (map_obj, location)
+            
+            response += "The map shows these locations relative to the address you provided."
+        else:
+            response = "I couldn't find any healthcare facilities for that location. Could you please provide a more specific location or city name?"
+        
+        st.session_state.hospital_search_location = None
+    
     else:
-        st.session_state.conversation_state = "general"
-        return "Let's start over. How can I help with your health concerns today?"
+        # New user query - detect intent and respond accordingly
+        intent, intent_data = detect_intent(user_input)
+        
+        # Check if query is about finding hospitals for specific disease
+        hospital_disease_match = False
+        for disease in disease_symptoms.keys():
+            if disease.lower() in user_input.lower() and any(term in user_input.lower() for term in ["hospital", "clinic", "facility", "doctor", "center"]):
+                hospital_disease_match = True
+                location_info = find_hospitals_from_input(user_input)
+                
+                if location_info[0]:  # If location was found
+                    st.session_state.hospital_search_location = location_info
+                    location, coordinates, hospitals = location_info
+                    
+                    if coordinates and hospitals:
+                        response = f"I found these healthcare facilities near {location} that specialize in {disease}:\n\n"
+                        
+                        for i, hospital in enumerate(hospitals, 1):
+                            response += f"{i}. **{hospital['name']}**\n"
+                            response += f"   Address: {hospital['vicinity']}\n"
+                            response += f"   Rating: {hospital.get('rating', 'N/A')}/5\n"
+                            if "specialties" in hospital:
+                                response += f"   Specialties: {', '.join(hospital['specialties'])}\n"
+                            response += "\n"
+                        
+                        # Create and display the map
+                        latitude, longitude = coordinates
+                        map_obj = create_hospital_map(latitude, longitude, hospitals)
+                        st.session_state.display_map = (map_obj, location)
+                        
+                        response += "The map shows these locations relative to the address you provided."
+                    else:
+                        response = "I couldn't find any healthcare facilities for that location. Could you please provide a more specific location or city name?"
+                    
+                    st.session_state.hospital_search_location = None
+                else:
+                    response = f"I can help you find hospitals specializing in {disease}. Please provide your city or location."
+                break
+        
+        # If not a hospital search with disease, process based on intent
+        if not hospital_disease_match:
+            if intent == "disease_inquiry" and intent_data:
+                response = handle_test_selection(intent_data)
+            
+            elif intent == "medical_check" and intent_data:
+                response = handle_test_selection(intent_data)
+                
+            elif intent == "hospital_search" and intent_data[0]:
+                location, coordinates, hospitals = intent_data
+                
+                if coordinates and hospitals:
+                    response = f"I found these healthcare facilities near {location}:\n\n"
+                    
+                    for i, hospital in enumerate(hospitals, 1):
+                        response += f"{i}. **{hospital['name']}**\n"
+                        response += f"   Address: {hospital['vicinity']}\n"
+                        response += f"   Rating: {hospital.get('rating', 'N/A')}/5\n"
+                        if "specialties" in hospital:
+                            response += f"   Specialties: {', '.join(hospital['specialties'])}\n"
+                        response += "\n"
+                    
+                    # Create and display the map
+                    latitude, longitude = coordinates
+                    map_obj = create_hospital_map(latitude, longitude, hospitals)
+                    st.session_state.display_map = (map_obj, location)
+                    
+                    response += "The map shows these locations relative to the address you provided."
+                else:
+                    response = "I couldn't find any healthcare facilities for that location. Could you please provide a more specific location or city name?"
+            
+            else:
+                # Check for symptoms in the user input
+                symptoms_response, suggested_disease = analyze_symptoms(user_input)
+                if symptoms_response:
+                    response = symptoms_response
+                    st.session_state.suggested_disease = suggested_disease
+                else:
+                    # For other queries, use Mistral AI
+                    response = chat_with_mistral(user_input)
+    
+    # Add AI response to conversation
+    st.session_state.conversation.append({"role": "assistant", "content": response})
+    
+    return response
 
-# **9️⃣ Initialize Session State for Chat History**
+# **8️⃣ Streamlit UI Setup**
+# Initialize session state for messages if not already set
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-if "conversation_state" not in st.session_state:
-    st.session_state.conversation_state = "general"
+# Sidebar for information
+st.sidebar.header("About this App")
+st.sidebar.write("""
+This Medical AI Assistant can:
+- Screen for common diseases
+- Provide health information
+- Find healthcare facilities
 
-if "disease_name" not in st.session_state:
-    st.session_state.disease_name = None
+*Note: This application is for educational purposes only and should not replace professional medical advice.*
+""")
 
-if "input_values" not in st.session_state:
-    st.session_state.input_values = {}
+st.sidebar.header("Available Tests")
+st.sidebar.write("""
+- Diabetes
+- Heart Disease
+- Parkinson's
+- Liver Disease
+- Kidney Disease
+""")
 
-if "field_keys" not in st.session_state:
-    st.session_state.field_keys = []
+# Display previous messages
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
 
-if "current_field_index" not in st.session_state:
-    st.session_state.current_field_index = 0
-
-if "modifying_field" not in st.session_state:
-    st.session_state.modifying_field = None
-
-# **🔟 UI Setup**
-
-# Initialize chat history
-if "messages" not in st.session_state:
-    st.session_state.messages = []
-
-# Create a container for chat history
-chat_container = st.container()
-
-# Display chat messages from history on app rerun
-with chat_container:
-    for message in st.session_state.messages:
-        role_class = "user" if message["role"] == "user" else "assistant"
-        st.markdown(f'<div class="chat-message {role_class}">{message["content"]}</div>', unsafe_allow_html=True)
-
-# Accept user input
-if prompt := st.chat_input("Ask me about your health or symptoms..."):
-    # Display user message in chat message container
-    with chat_container:
-        st.markdown(f'<div class="chat-message user">{prompt}</div>', unsafe_allow_html=True)
-        
-        # Add user message to chat history
-        st.session_state.messages.append({"role": "user", "content": prompt})
-        
-        # Process user input and get response
-        response = process_user_input(prompt)
-        
-        # Display assistant response in chat message container
-        st.markdown(f'<div class="chat-message assistant">{response}</div>', unsafe_allow_html=True)
-        
-        # Add assistant response to chat history
+# User input
+if user_input := st.chat_input("Type health your message..."):
+    # Append user's message to session state
+    st.session_state.messages.append({"role": "user", "content": user_input})
+    with st.chat_message("user"):
+        st.markdown(user_input)
+    
+    # Process response (Placeholder for AI response logic)
+    response = "Hello! I'm here to help you with general health-related questions. How can I assist you today? 😊"
+    
+    # Append bot's response if it's not already appended
+    if not (st.session_state.messages and st.session_state.messages[-1]["role"] == "assistant" and st.session_state.messages[-1]["content"] == response):
         st.session_state.messages.append({"role": "assistant", "content": response})
-
-# Sidebar with information
-with st.sidebar:
-    # Medical AI Image
-    st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/AI_healthcare_icon.png/800px-AI_healthcare_icon.png", use_container_width=True)
-
-    # About AI Medical Assistant
-    st.header("🤖 About AI Medical Assistant")
-    st.markdown("""
-    This AI-powered chatbot offers:
-    
-    - **Health Assessment**: Evaluate your risk for 6 different health conditions  
-    - **Symptom Analysis**: Discuss your symptoms for possible insights  
-    - **Health Advice**: Get general health recommendations based on your concerns  
-    """)
-
-    st.divider()
-
-    # Available Disease Tests
-    st.header("🩺 Available Disease Tests")
-
-    diseases = {
-        "Heart Disease": "❤️",
-        "Diabetes": "🩸",
-        "Parkinson’s": "🧠",
-        "Liver Disease": "🫀",
-        "Kidney Disease": "🚰",
-        "Breast Cancer": "🎗️"
-    }
-
-    for disease, emoji in diseases.items():
-        with st.expander(f"{emoji} {disease}", expanded=True):  # Expands by default so names are visible
-            st.write("")  # Keeps the expander open
-
-    st.divider()
-
-    # Reset Conversation Button
-    if st.button("🔄 Reset Conversation", help="Click to clear chat history"):
-        st.session_state["messages"] = []  # Clear chat history
-        st.rerun()  # Refresh Streamlit UI
-
+        with st.chat_message("assistant"):
+            st.markdown(response)
 
